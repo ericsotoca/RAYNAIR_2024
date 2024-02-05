@@ -264,8 +264,8 @@ btn_stop.grid(row=8, column=1, padx=10, pady=5, sticky="w")
 
 # Remplacement des Entry par des boutons pour ouvrir le calendrier
 # pour créer une version executable, mettre en commentaire les lignes 267, 268 + 277,278
-# btn_date_debut = tk.Button(window, text="📅", command=choisir_date_debut) 
-# btn_date_fin = tk.Button(window, text="📅", command=choisir_date_fin)
+btn_date_debut = tk.Button(window, text="📅", command=choisir_date_debut) 
+btn_date_fin = tk.Button(window, text="📅", command=choisir_date_fin)
 
 # Création du Combobox pour la sélection d'aéroports
 combo_aeroports = ttk.Combobox(window, values=[f"{code} {nom}" for code, nom in aeroports], state="readonly")
@@ -273,9 +273,9 @@ combo_aeroports.grid(row=4, column=2, padx=(0, 15), pady=5, sticky="w")
 combo_aeroports.bind("<<ComboboxSelected>>", choisir_aeroport)
 
 # Positionnement des boutons de calendrier plus proche des Entry
-# pour une version executable, mettre en commentaire les deux lignes suivantes
-# btn_date_debut.grid(row=2, column=2, padx=(0, 15), pady=5, sticky="w") 
-# btn_date_fin.grid(row=3, column=2, padx=(0, 15), pady=5, sticky="w") 
+#pour une version executable, mettre en commentaire les deux lignes suivantes
+btn_date_debut.grid(row=2, column=2, padx=(0, 15), pady=5, sticky="w") 
+btn_date_fin.grid(row=3, column=2, padx=(0, 15), pady=5, sticky="w") 
 
 # Positionnement des widgets
 label_logo.grid(row=0, column=0, columnspan=3, pady=10)
