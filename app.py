@@ -192,7 +192,7 @@ aeroports= [
 
 # Configuration de la fenêtre principale de l'application
 window = tk.Tk()
-window.title("VoyageMiniPrix")
+window.title("Voyage_Mini_Prix")
 window.geometry('500x850')  # Ajuste la taille de la fenêtre selon tes besoins
 window.configure(bg='lightblue')
 
@@ -207,13 +207,13 @@ window.grid_columnconfigure(0, weight=1)
 window.grid_columnconfigure(1, weight=1) 
 
 # Création et placement du logo
-logo_image = tk.PhotoImage(file=r'C:\Users\FiercePC\Desktop\IA\RAYNAIR-MRS\logo.png')
+logo_image = tk.PhotoImage(file=r'C:\Users\FiercePC\Desktop\IA\RAYNAIR_2024\logo.png')
 label_logo = Label(window, image=logo_image, bg='lightblue')
 label_logo.grid(row=0, column=0, columnspan=3, pady=10, sticky="nsew")  # Utilisez columnspan=2 pour occuper deux colonnes au centre
 label_logo.grid(row=0, column=0, columnspan=3, pady=10, sticky="nsew")
 
 # Après la création et le positionnement du logo
-label_instructions = tk.Label(window, text="Pour entrer vos informations de voyage, utilisez les valeurs par défaut ou saisissez vos propres choix.", bg='lightblue', wraplength=300)  # Ajustez `wraplength` selon la largeur souhaitée
+label_instructions = tk.Label(window, text="📅 Sélectionnez une fenêtre de départ, par exemple de 1 à 3 mois, pour un séjour de quelques jours. Testez et un bip final (≈ 3 min) vous avertit de la fin de la recherche ! 🏖️", bg='lightblue', wraplength=350)  # Ajustez `wraplength` selon la largeur souhaitée
 label_instructions.grid(row=1, column=0, columnspan=3, pady=10, sticky="nsew")
 
 # Création et placement des widgets
@@ -259,12 +259,13 @@ btn_rechercher = Button(window, text="Rechercher", command=lancer_recherche_vols
 btn_rechercher.grid(row=7, column=1, padx=10, pady=10, sticky="w") 
 
 # Création et positionnement du bouton Stop juste à droite du bouton Rechercher
-btn_stop = Button(window, text="Stop", command=reinitialiser_formulaire)
+btn_stop = Button(window, text="Stopper", command=reinitialiser_formulaire)
 btn_stop.grid(row=8, column=1, padx=10, pady=5, sticky="w")  
 
 # Remplacement des Entry par des boutons pour ouvrir le calendrier
-btn_date_debut = tk.Button(window, text="📅", command=choisir_date_debut)
-btn_date_fin = tk.Button(window, text="📅", command=choisir_date_fin)
+# pour créer une version executable, mettre en commentaire les lignes 267, 268 + 277,278
+# btn_date_debut = tk.Button(window, text="📅", command=choisir_date_debut) 
+# btn_date_fin = tk.Button(window, text="📅", command=choisir_date_fin)
 
 # Création du Combobox pour la sélection d'aéroports
 combo_aeroports = ttk.Combobox(window, values=[f"{code} {nom}" for code, nom in aeroports], state="readonly")
@@ -272,8 +273,9 @@ combo_aeroports.grid(row=4, column=2, padx=(0, 15), pady=5, sticky="w")
 combo_aeroports.bind("<<ComboboxSelected>>", choisir_aeroport)
 
 # Positionnement des boutons de calendrier plus proche des Entry
-btn_date_debut.grid(row=2, column=2, padx=(0, 15), pady=5, sticky="w") # padx ajusté pour être plus près de l'Entry
-btn_date_fin.grid(row=3, column=2, padx=(0, 15), pady=5, sticky="w") 
+# pour une version executable, mettre en commentaire les deux lignes suivantes
+# btn_date_debut.grid(row=2, column=2, padx=(0, 15), pady=5, sticky="w") 
+# btn_date_fin.grid(row=3, column=2, padx=(0, 15), pady=5, sticky="w") 
 
 # Positionnement des widgets
 label_logo.grid(row=0, column=0, columnspan=3, pady=10)
