@@ -199,7 +199,6 @@ window.grid_rowconfigure(1, weight=1)
 window.grid_columnconfigure(0, weight=1)
 window.grid_columnconfigure(1, weight=1) 
 
-
 # Obtient le chemin d'accès au dossier actuel où se trouve le script
 dossier_courant = os.path.dirname(__file__)
 
