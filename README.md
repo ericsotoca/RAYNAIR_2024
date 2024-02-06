@@ -1,7 +1,7 @@
-# Application VoyageMiniPrix
+# Application "Voyage Mini Prix"
 
 ## Description
-L'application VoyageMiniPrix est conçue pour aider les utilisateurs à trouver les meilleures offres de vols en fonction de leurs critères de voyage. Elle offre une interface graphique facile à utiliser, permettant de saisir des informations telles que la période de départ, l'aéroport de départ, la durée du séjour, et le prix maximum désiré. Cette application utilise Selenium pour récupérer les données des vols sur le web et les afficher à l'utilisateur.
+L'application VoyageMiniPrix est conçue pour aider les utilisateurs à trouver les meilleures offres de vols en fonction de leurs critères de voyage. Particulièrement adaptée aux personnes qui peuvent s'échapper facilement de leur quotidien ou qui sont Nomad Digital. Elle offre une interface graphique facile à utiliser, permettant de saisir des informations telles que la période de départ, l'aéroport de départ, la durée du séjour, et le prix maximum désiré. Cette application utilise Selenium pour récupérer les données des vols sur le web et les afficher à l'utilisateur.
 
 ## Fonctionnalités
 - Interface utilisateur graphique intuitive avec Tkinter.
