@@ -18,15 +18,13 @@ Voici un aperçu de l'interface de l'application :
 
 ## Prérequis
 Avant de lancer l'application, assurez-vous d'avoir installé Python et les bibliothèques suivantes :
-- `tkinter`
 - `selenium`
 - `tkcalendar`
 - `bs4` (BeautifulSoup)
 - `webdriver_manager`
 
 Vous pouvez installer ces bibliothèques en utilisant la commande `pip install` :
-pip install tkcalendar selenium beautifulsoup4 webdriver-manager
-
+- pip install beautifulsoup4==4.12.2 selenium==4.14.0 tkcalendar==1.6.1 webdriver-manager==4.0.1
 
 ## Comment utiliser
 1. Clonez ce dépôt sur votre machine locale.
