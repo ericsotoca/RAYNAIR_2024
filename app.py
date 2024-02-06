@@ -3,6 +3,7 @@ from tkinter import scrolledtext, Label, Entry, Button, messagebox
 from tkcalendar import Calendar
 import threading
 import re
+import os
 from tkinter import ttk
 import winsound
 from selenium import webdriver
@@ -198,8 +199,15 @@ window.grid_rowconfigure(1, weight=1)
 window.grid_columnconfigure(0, weight=1)
 window.grid_columnconfigure(1, weight=1) 
 
+
+# Obtient le chemin d'accès au dossier actuel où se trouve le script
+dossier_courant = os.path.dirname(__file__)
+
+# Construit le chemin d'accès au fichier logo.png
+chemin_logo = os.path.join(dossier_courant, 'logo.png')
+
 # Création et placement du logo
-logo_image = tk.PhotoImage(file=r'C:\Users\FiercePC\Desktop\IA\RAYNAIR_2024\logo.png')
+logo_image = tk.PhotoImage(file=chemin_logo)
 label_logo = Label(window, image=logo_image, bg='lightblue')
 label_logo.grid(row=0, column=0, columnspan=3, pady=10, sticky="nsew")  # Utilisez columnspan=2 pour occuper deux colonnes au centre
 label_logo.grid(row=0, column=0, columnspan=3, pady=10, sticky="nsew")
