@@ -213,9 +213,35 @@ chemin_logo = os.path.join(dossier_courant, 'logo.png')
 logo_image = tk.PhotoImage(file=chemin_logo)
 label_logo = Label(window, image=logo_image, bg='lightblue')
 
+# Définit une police de caractères plus grande pour le label d'instructions
+police_grande = font.Font(family="Helvetica", size=10)  # Tu peux ajuster la taille et la famille de police ici
+
+# Texte d'accueil mis à jour avec des sauts de ligne pour une meilleure présentation
+texte_accueil = (
+    "📅 Sélectionnez une fenêtre de départ,\n"
+    "par exemple de 1 à 3 mois,\n"
+    "pour un séjour de quelques jours.\n"
+    "Testez et un bip final (≈ 3 min)\n"
+    "vous avertit de la fin de la recherche ! 🏖️"
+)
+
+# Définis une largeur de wrap adaptée pour que le texte reste dans sa colonne sans l'élargir
+wraplength_desire = 500  # Ajuste cette valeur en pixels selon tes besoins
+
+# Création et placement du label d'instructions avec la nouvelle police et le wraplength ajusté
+label_instructions = tk.Label(
+    window,
+    text=texte_accueil,
+    bg='lightblue',
+    font=police_grande,
+    wraplength=wraplength_desire,  # Utilise la largeur de wrap que tu as définie
+    justify="left"
+)
+label_instructions.grid(row=0, column=1, padx=1, pady=1, sticky="nsew")  # Utilise sticky="nsew" pour étendre le label dans toutes les directions
+
 # Création et placement du label d'instructions avec la nouvelle police
-label_instructions = tk.Label(window, text="📅 Sélectionnez une fenêtre de départ, par exemple de 1 à 3 mois, pour un séjour de quelques jours. Testez et un bip final (≈ 3 min) vous avertit de la fin de la recherche ! 🏖️", bg='lightblue', wraplength=350, font=police_grande)  # Ajoute `font=police_grande` ici
-label_instructions.grid(row=0, column=1, padx=5, pady=5, sticky="w")
+# label_instructions = tk.Label(window, text="📅 Sélectionnez une fenêtre de départ, par exemple de 1 à 3 mois, pour un séjour de quelques jours. Testez et un bip final (≈ 3 min) vous avertit de la fin de la recherche ! 🏖️", bg='lightblue', wraplength=350, font=police_grande)  # Ajoute `font=police_grande` ici
+# label_instructions.grid(row=0, column=1, padx=5, pady=5, sticky="w")
 
 # Création et placement des widgets
 label_traitement = Label(window, text='', bg='lightblue')
@@ -272,9 +298,9 @@ combo_aeroports = ttk.Combobox(window, values=[f"{code} {nom}" for code, nom in 
 combo_aeroports.bind("<<ComboboxSelected>>", choisir_aeroport)
 
 # Positionnement des boutons de calendrier plus proche des Entry
-btn_date_debut.grid(row=2, column=1, padx=(0, 240), pady=5, sticky="e")  # Décalage vers la gauche avec padx
-btn_date_fin.grid(row=3, column=1, padx=(0, 240), pady=5, sticky="e")    # Décalage vers la gauche avec padx
-combo_aeroports.grid(row=4, column=1, padx=(0, 120), pady=5, sticky="e") # Décalage vers la gauche avec padx
+btn_date_debut.grid(row=2, column=1, padx=(0, 135), pady=5, sticky="e")  # Décalage vers la gauche avec padx
+btn_date_fin.grid(row=3, column=1, padx=(0, 135), pady=5, sticky="e")    # Décalage vers la gauche avec padx
+combo_aeroports.grid(row=4, column=1, padx=(0, 15), pady=5, sticky="e") # Décalage vers la gauche avec padx
 
 # Positionnement des widgets
 label_logo.grid(row=0, column=0, padx=10, pady=10, sticky="w")
@@ -303,14 +329,14 @@ entry_lieu_depart.insert(0, lieu_depart_defaut)
 entry_duree_sejour.insert(0, duree_sejour_defaut)
 
 # Création et positionnement de la zone de texte des résultats
-text_resultats = scrolledtext.ScrolledText(window, height=50, width=30)  
+text_resultats = scrolledtext.ScrolledText(window, height=40, width=45)  
 text_resultats.grid(row=0, column=2, rowspan=12, padx=10, pady=10, sticky="nsew")
 
 # Création et positionnement du label de traitement
 label_traitement = Label(window, text='', bg='lightblue')
 
 # Création et positionnement du label des contacts
-label_contacts = tk.Label(window, text="Création : Sotoca Online - Version 1 - 022024", bg='lightblue')
+label_contacts = tk.Label(window, text="Création : Sotoca Online - Version 1.1 - 022024", bg='lightblue')
 label_contacts.grid(row=11, column=0, columnspan=3, pady=10, sticky="nsew")
 
 # Lancement de l'application
