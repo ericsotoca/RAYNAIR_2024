@@ -15,8 +15,7 @@ from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
 from selenium.common.exceptions import TimeoutException
 
-# Fonction pour effectuer la recherche de vols
-def effectuer_recherche_vols_selenium(date_debut_str, date_fin_str, lieu_depart, duree_sejour, prix_max):
+def effectuer_recherche_vols_selenium(date_debut_str, date_fin_str, lieu_depart, durees_sejour, prix_max):
     options = webdriver.FirefoxOptions()
     options.add_argument("--headless")
     service = FirefoxService(GeckoDriverManager().install())
@@ -24,57 +23,51 @@ def effectuer_recherche_vols_selenium(date_debut_str, date_fin_str, lieu_depart,
     
     date_debut = datetime.strptime(date_debut_str, "%d-%m-%Y")
     date_fin = datetime.strptime(date_fin_str, "%d-%m-%Y")
-    delta_jour = timedelta(days=1)
 
-    meilleures_offres = {}
+    meilleures_offres_par_duree = {}
 
-    date_actuelle = date_debut
-    while date_actuelle <= date_fin:
-        date_out = date_actuelle.strftime("%Y-%m-%d")
-        date_in = (date_actuelle + timedelta(days=duree_sejour)).strftime("%Y-%m-%d")
+    for duree_sejour_str in durees_sejour.split(','):
+        duree_sejour = int(duree_sejour_str.strip())
+        meilleures_offres = {}
+        date_actuelle = date_debut
+        while date_actuelle <= date_fin:
+            date_out = date_actuelle.strftime("%Y-%m-%d")
+            date_in = (date_actuelle + timedelta(days=duree_sejour)).strftime("%Y-%m-%d")
 
-        # Inclusion du paramètre prix_max dans l'URL
-        url = f"https://www.ryanair.com/fr/fr/cheap-flights-beta?originIata={lieu_depart}&destinationIata=ANY&isReturn=true&isMacDestination=false&promoCode=&adults=1&teens=0&children=0&infants=0&dateOut={date_out}&dateIn={date_in}&daysTrip={duree_sejour}&dayOfWeek=TUESDAY&isExactDate=true&outboundFromHour=00:00&outboundToHour=23:59&inboundFromHour=00:00&inboundToHour=23:59&priceValueTo={prix_max}&currency=EUR&isFlexibleDay=false"
+            url = f"https://www.ryanair.com/fr/fr/cheap-flights-beta?originIata={lieu_depart}&destinationIata=ANY&isReturn=true&isMacDestination=false&promoCode=&adults=1&teens=0&children=0&infants=0&dateOut={date_out}&dateIn={date_in}&daysTrip={duree_sejour}&dayOfWeek=TUESDAY&isExactDate=true&outboundFromHour=00:00&outboundToHour=23:59&inboundFromHour=00:00&inboundToHour=23:59&priceValueTo={prix_max}&currency=EUR&isFlexibleDay=false"
+            
+            driver.get(url)
+            try:
+                WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "div.country-card__content")))
+                content = driver.page_source
+                soup = BeautifulSoup(content, 'html.parser')
+                cards = soup.select("div.country-card__content")
+                for card in cards:
+                    original_text = card.text.strip()
+                    cleaned_text = re.sub(r"\s+", " ", original_text).strip()
 
-        driver.get(url)
-        try:
-            WebDriverWait(driver, 3).until(EC.presence_of_element_located((By.CSS_SELECTOR, "div.country-card__content")))
-            content = driver.page_source
-            soup = BeautifulSoup(content, 'html.parser')
-            cards = soup.select("div.country-card__content")
-            for card in cards:
-                original_text = card.text.strip()
-                cleaned_text = re.sub(r"\s+", " ", original_text).strip()
+                    match = re.search(r"(\w+)\s.*€(\d+[\.,]?\d*)", cleaned_text)
+                    if match:
+                        pays = match.group(1)
+                        prix = float(match.group(2).replace(',', '.'))
+                        details_vol = f"{date_out} - {date_in} | Prix: €{prix}"
 
-                match = re.search(r"(\w+)\s.*€(\d+[\.,]?\d*)", cleaned_text)
-                if match:
-                    pays = match.group(1)
-                    prix = float(match.group(2).replace(',', '.'))
-                    details_vol = f"{date_out} - {date_in} | Prix: €{prix}"
+                        if pays == "Bas":
+                            pays = "Pays-Bas"
+                        if pays == "Uni":
+                            pays = "Royaume-Uni"
 
-                    if pays == "Bas":
-                        pays = "Pays-Bas"
+                        if pays not in meilleures_offres or meilleures_offres[pays]["prix"] > prix:
+                            meilleures_offres[pays] = {"prix": prix, "details": details_vol}
+            except TimeoutException:
+                print("TimeoutException pour la date de départ:", date_out)
 
-                    if pays == "Uni":
-                        pays = "Royaume-Uni"
+            date_actuelle += timedelta(days=1)
 
-                    if pays not in meilleures_offres or meilleures_offres[pays]["prix"] > prix:
-                        meilleures_offres[pays] = {"prix": prix, "details": details_vol}
-
-        except TimeoutException:
-            pass
-        date_actuelle += delta_jour
+        meilleures_offres_par_duree[duree_sejour] = sorted(meilleures_offres.items(), key=lambda offre: offre[1]['prix'])
 
     driver.quit()
-
-    # Bip-bip pour la fin du processus
-    jouer_son_fin_processus()
-
-    # Préparation des résultats pour l'affichage
-    offres_triees = sorted(meilleures_offres.items(), key=lambda offre: offre[1]['prix'])
-    resultats = [f"{pays}: {infos['details']}" for pays, infos in offres_triees]
-
-    return resultats
+    return meilleures_offres_par_duree
 
 # Fonction appelée lorsque l'utilisateur clique sur le bouton Rechercher
 def lancer_recherche_vols():
@@ -90,13 +83,11 @@ def rechercher_vols():
         date_debut_str = entry_date_debut.get()
         date_fin_str = entry_date_fin.get()
         lieu_depart = entry_lieu_depart.get()
-        duree_sejour = int(entry_duree_sejour.get())
-        prix_max = float(entry_prix_max.get())  # Récupération du prix maximum
+        durees_sejour = entry_duree_sejour.get()  # Maintenant, plusieurs durées possibles
+        prix_max = float(entry_prix_max.get())
 
-        # Mise à jour de l'appel à effectuer_recherche_vols_selenium pour inclure le prix max
-        resultats = effectuer_recherche_vols_selenium(date_debut_str, date_fin_str, lieu_depart, duree_sejour, prix_max)
-
-        window.after(0, afficher_resultats, resultats)
+        resultats_par_duree = effectuer_recherche_vols_selenium(date_debut_str, date_fin_str, lieu_depart, durees_sejour, prix_max)
+        window.after(0, afficher_resultats, resultats_par_duree)
     except Exception as e:
         window.after(0, lambda: messagebox.showerror("Erreur", f"Une erreur est survenue lors de la recherche : {e}"))
 
@@ -108,18 +99,19 @@ def jouer_son_fin_processus():
         winsound.Beep(1000, 200)
 
 # Modification de la fonction pour intégrer l'effet sonore après l'affichage des résultats
-def afficher_resultats(resultats):
+def afficher_resultats(resultats_par_duree):
     text_resultats.delete(1.0, tk.END)
-    if not resultats:
+    if not resultats_par_duree:
         messagebox.showinfo("Aucune offre", "Aucune offre trouvée pour les critères spécifiés.")
     else:
-        for resultat in resultats:
-            text_resultats.insert(tk.END, resultat + "\n")
+        for duree, offres in resultats_par_duree.items():
+            text_resultats.insert(tk.END, f"Voyage de {duree} jours\n")
+            for pays, infos in offres:
+                text_resultats.insert(tk.END, f"{pays}: {infos['details']}\n")
+            text_resultats.insert(tk.END, "-"*50 + "\n")
     
     window.after(2000, label_traitement.pack_forget)
     btn_rechercher.config(state='normal')
-    
-    # Jouer l'effet sonore de fin de processus
     jouer_son_fin_processus()
 
 # Fonction pour ré-initialiser le formulaire et la zone de texte des résultats
