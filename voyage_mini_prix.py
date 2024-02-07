@@ -8,6 +8,7 @@ import re
 import os
 from tkinter import ttk
 import winsound
+import webbrowser
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.service import Service as FirefoxService
@@ -17,6 +18,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
 from selenium.common.exceptions import TimeoutException
+
 
 # Ajout d'une variable globale pour contrôler le clignotement
 clignotement_en_cours = False
@@ -85,6 +87,10 @@ def effectuer_recherche_vols_selenium(date_debut_str, date_fin_str, lieu_depart,
     driver.quit()
     return meilleures_offres_par_duree
 
+# Fonction pour ouvrir un lien dans le navigateur par défaut
+def ouvrir_lien(url):
+    webbrowser.open(url, new=2)  # new=2 indique d'ouvrir dans un nouvel onglet, si possible
+
 def faire_clignoter_label():
     global clignotement_en_cours
     if clignotement_en_cours:
@@ -126,7 +132,7 @@ def jouer_son_fin_processus():
         winsound.Beep(1000, 200)
         winsound.Beep(1000, 200)
 
-# Modification de la fonction pour intégrer l'effet sonore après l'affichage des résultats
+# Modification de la fonction `afficher_resultats` pour que le lien ne couvre que le pays
 def afficher_resultats(resultats_par_duree):
     global clignotement_en_cours
     clignotement_en_cours = False  # Arrête le clignotement
@@ -138,7 +144,19 @@ def afficher_resultats(resultats_par_duree):
         for duree, offres in resultats_par_duree.items():
             text_resultats.insert(tk.END, f"Voyage de {duree} jours\n")
             for pays, infos in offres:
-                text_resultats.insert(tk.END, f"{pays}: {infos['details']}\n")
+                # Extraire les dates de départ et de retour
+                date_out, date_in = infos['details'].split(" | ")[0].split(" - ")
+                
+                # Construction de l'URL spécifique pour chaque pays
+                url = f"https://www.ryanair.com/fr/fr/cheap-flights-beta?originIata={entry_lieu_depart.get()}&destinationIata=ANY&isReturn=true&isMacDestination=false&promoCode=&adults=1&teens=0&children=0&infants=0&dateOut={date_out}&dateIn={date_in}&daysTrip={duree}&dayOfWeek=TUESDAY&isExactDate=true&outboundFromHour=00:00&outboundToHour=23:59&inboundFromHour=00:00&inboundToHour=23:59&priceValueTo={entry_prix_max.get()}&currency=EUR&isFlexibleDay=false"
+                
+                # Insérer le nom du pays avec un lien cliquable
+                text_resultats.insert(tk.END, f"{pays}", "lien")
+                text_resultats.tag_add("lien", "end-1c linestart", "end-1c")
+                text_resultats.tag_config("lien", foreground="blue", underline=1)
+                # Attacher l'événement de clic au lien avec la bonne URL
+                text_resultats.tag_bind("lien", "<Button-1>", lambda e, url=url: ouvrir_lien(url))
+                text_resultats.insert(tk.END, f": {infos['details']}\n")
             text_resultats.insert(tk.END, "-"*50 + "\n")
     
     window.after(2000, label_traitement.pack_forget)
@@ -259,14 +277,14 @@ police_grande = font.Font(family="Helvetica", size=10)  # Tu peux ajuster la tai
 
 # Texte d'accueil mis à jour avec des sauts de ligne pour une meilleure présentation
 texte_accueil = (
-    "📅 Sélectionnez une fenêtre de départ pour\n"
-    "votre voyage et indiquez le début de votre\n"
-    "période de retour.\n\n"
-    "La recherche de vols tiendra compte de la\n"
-    "durée du séjour pour déterminer la date\n"
-    "de retour.\n\n"
-    "Un bip final vous avertira, dans quelques\n"
-    "minutes ! 🏖️"
+    "Vous aimeriez partir dans les\n"
+    "prochaines semaines, les prochains mois ?\n\n"
+    "Et vous êtes plutôt du genre disponibles ?\n"
+    "Retraité ? Nomad Digital? Au chômage !...\n\n"
+    "Si vous pouvez choisir vos dates alors\n"
+    "vous pourrez profiter des meilleurs prix !\n\n"
+    "Lancez la recherche, un bip final vous\n"
+    "avertira, soyez patient quelques minutes !"
 )
 
 # Définis une largeur de wrap adaptée pour que le texte reste dans sa colonne sans l'élargir
