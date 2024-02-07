@@ -45,6 +45,124 @@ def chemin_relatif(fichier):
 
     return chemin_complet
 
+# Dictionnaire des traductions (en cours)
+traductions = {
+    'france': {
+        'titre': "Voyage_Mini_Prix",
+        'texte_accueil': ("Vous aimeriez partir dans les\nprochaines semaines, les prochains mois ?\n\n"
+                          "Et vous êtes plutôt du genre disponibles ?\nRetraité ? Nomad Digital ? Au chômage !...\n\n"
+                          "Si vous pouvez choisir vos dates alors\nvous pourrez profiter des meilleurs prix !\n\n"
+                          "Lancez la recherche, un bip final vous\navertira, soyez patient quelques minutes !"),
+        'rechercher': "Rechercher",
+        'stopper': "Stopper",
+        'debut_recherche': "Début de la plage de recherche",
+        'fin_recherche': "Fin de la plage de recherche",
+        'aeroport_depart': "Aéroport de départ",
+        'duree_sejour': "Durée du séjour",
+        'prix_max': "Prix max en €",
+        'demarrer_processus': "Démarrer le processus !",
+        'choisir': "Choisir",
+        'creation_info': "Création: Sotoca-Online - Version 1.3 - 022024",
+        'aucune_offre': "Aucune offre trouvée pour les critères spécifiés.",
+        'voyage_de': "Voyage de",
+        'jours': "jours",
+        'erreur_recherche': "Une erreur est survenue lors de la recherche :",
+    },
+    'royaume': {
+        'titre': "Travel_Low_Cost",
+        'texte_accueil': ("Would you like to go away in the\ncoming weeks or months?\n\n"
+                          "And are you generally available?\nRetired? Digital Nomad? Unemployed!...\n\n"
+                          "If you can choose your dates then\nyou can take advantage of the best prices!\n\n"
+                          "Start the search, a final beep will\nalert you, please be patient for a few minutes!"),
+        'rechercher': "Search",
+        'stopper': "Stop",
+        'debut_recherche': "Start of search range",
+        'fin_recherche': "End of search range",
+        'aeroport_depart': "Departure airport",
+        'duree_sejour': "Duration of stay",
+        'prix_max': "Max price in €",
+        'demarrer_processus': "Start the process!",
+        'choisir': "Choose",
+        'creation_info': "Creation: Sotoca-Online.com - Version 1.3 - 022024",
+        'aucune_offre': "No offers found for the specified criteria.",
+        'voyage_de': "Trip of",
+        'jours': "days",
+        'erreur_recherche': "An error occurred during the search:",
+    },
+    'italie': {
+        'titre': "Viaggio_A_Basso_Costo",
+        'rechercher': "Cerca",
+        'stopper': "Fermare",
+        'debut_recherche': "Inizio dell'intervallo di ricerca",
+        'fin_recherche': "Fine dell'intervallo di ricerca",
+        'aeroport_depart': "Aeroporto di partenza",
+        'duree_sejour': "Durata del soggiorno",
+        'prix_max': "Prezzo massimo in €",
+        'demarrer_processus': "Avvia il processo!",
+        'texte_accueil': ("Vorresti partire nelle\nprossime settimane o mesi?\n\n"
+                          "E sei generalmente disponibile?\nPensionato? Nomade Digitale? Disoccupato!...\n\n"
+                          "Se puoi scegliere le tue date\npotrai approfittare dei migliori prezzi!\n\n"
+                          "Avvia la ricerca, un segnale acustico finale ti\navviserà, per favore sii paziente per qualche minuto!"),
+        'creation_info': "Creazione: Sotoca-Online.com - Versione 1.3 - 022024",
+    },
+    'espagne': {
+        'titre': "Viaje_Mini_Precio",
+        'texte_accueil': ("¿Te gustaría partir en las\npróximas semanas o meses?\n\n"
+                          "¿Eres de los que tienen disponibilidad?\n¿Jubilado? ¿Nómada Digital? ¿Desempleado?...\n\n"
+                          "Si puedes elegir tus fechas,\nentonces podrás aprovechar los mejores precios.\n\n"
+                          "Inicia la búsqueda, un bip final te avisará,\n¡ten paciencia unos minutos!"),
+        'rechercher': "Buscar",
+        'stopper': "Detener",
+        'debut_recherche': "Inicio del periodo de búsqueda",
+        'fin_recherche': "Fin del periodo de búsqueda",
+        'aeroport_depart': "Aeropuerto de salida",
+        'duree_sejour': "Duración de la estancia",
+        'prix_max': "Precio máximo en €",
+        'demarrer_processus': "¡Iniciar el proceso!",
+        'choisir': "Elegir",
+        'creation_info': "Creación: Sotoca-Online.com - Versión 1.3 - 022024",
+    },
+    # Correction de la section 'allemand' avec les traductions allemandes appropriées
+    'allemagne': {
+        'titre': "Reise_zum_Kleinen_Preis",
+        'texte_accueil': ("Möchten Sie in den kommenden\nWochen oder Monaten verreisen?\n\n"
+                          "Sind Sie im Allgemeinen verfügbar?\nRentner? Digitaler Nomade? Arbeitslos?...\n\n"
+                          "Wenn Sie Ihre Termine wählen können,\ndann können Sie die besten Preise nutzen.\n\n"
+                          "Starten Sie die Suche, ein abschließendes\nPiepsignal wird Sie informieren,\nbitte haben Sie ein paar Minuten Geduld!"),
+        'rechercher': "Suchen",
+        'stopper': "Stoppen",
+        'debut_recherche': "Beginn des Suchzeitraums",
+        'fin_recherche': "Ende des Suchzeitraums",
+        'aeroport_depart': "Abflughafen",
+        'duree_sejour': "Aufenthaltsdauer",
+        'prix_max': "Maximalpreis in €",
+        'demarrer_processus': "Prozess starten!",
+        'choisir': "Wählen",
+        'creation_info': "Erstellung: Sotoca-Online.com - Version 1.3 - 022024",
+    },
+}
+
+# Fonction pour changer la langue
+def changer_langue(langue):
+    # Met à jour le titre de la fenêtre
+    window.title(traductions[langue]['titre'])
+    # Met à jour les textes des boutons et labels
+    btn_rechercher.config(text=traductions[langue]['rechercher'])
+    btn_stop.config(text=traductions[langue]['stopper'])
+    label_date_debut.config(text=traductions[langue]['debut_recherche'])
+    label_date_fin.config(text=traductions[langue]['fin_recherche'])
+    label_lieu_depart.config(text=traductions[langue]['aeroport_depart'])
+    label_duree_sejour.config(text=traductions[langue]['duree_sejour'])
+    label_prix_max.config(text=traductions[langue]['prix_max'])
+    label_instructions.config(text=traductions[langue]['texte_accueil']) 
+    label_contacts.config(text=traductions[langue]['creation_info']) 
+    label_traitement.config(text=traductions[langue]['demarrer_processus']) 
+    
+
+# Crée une fonction pour générer une action de changement de langue pour éviter les problèmes de portée de la lambda dans la boucle
+def creer_action_changement_langue(langue):
+    return lambda: changer_langue(langue)
+
 chemin_logo = chemin_relatif('logo.png')
 
 def effectuer_recherche_vols_selenium(date_debut_str, date_fin_str, lieu_depart, durees_sejour, prix_max):
@@ -122,15 +240,16 @@ labels_drapeaux = []
 # Crée un Frame pour contenir tous les drapeaux
 frame_drapeaux = tk.Frame(window, bg='lightblue')
 frame_drapeaux.grid(row=8, column=0, columnspan=3, padx=20, pady=2, sticky="w")  # Étendre le Frame sur les colonnes nécessaires
-
-# Création du Frame pour les drapeaux et chargement des images avec chemin_relatif
+   
+# Création du Frame pour les drapeaux et chargement des images avec chemin_relatif (modifié pour associer les actions de changement de langue)
+# Utilise la fonction ci-dessus pour définir l'action du bouton
 for index, nom_drapeau in enumerate(noms_drapeaux):
     chemin_image = chemin_relatif(f"{nom_drapeau}.png")
-    image_drapeau = tk.PhotoImage(file=chemin_image).subsample(2)
-    label_drapeau = tk.Label(frame_drapeaux, image=image_drapeau, bg='lightblue')
+    image_drapeau = tk.PhotoImage(file=chemin_image).subsample(2)  # Ajuste la taille des images si nécessaire
+    action_changement_langue = creer_action_changement_langue(nom_drapeau)
+    label_drapeau = tk.Button(frame_drapeaux, image=image_drapeau, bg='lightblue', command=action_changement_langue)
     label_drapeau.image = image_drapeau
     label_drapeau.pack(side="left", padx=5)
-    labels_drapeaux.append(label_drapeau)
 
 def faire_clignoter_label():
     global clignotement_en_cours
@@ -431,7 +550,7 @@ clignotement_en_cours = False
 faire_clignoter_label()
 
 # Création et positionnement du label des contacts
-label_contacts = tk.Label(window, text="Création : Sotoca-Online - Version 1.2 - 022024", bg='lightblue')
+label_contacts = tk.Label(window, text="Création : Sotoca-Online - Version 1.3 - 022024", bg='lightblue')
 label_contacts.grid(row=11, column=0, columnspan=3, pady=10, sticky="nsew")
 
 # Lancement de l'application
