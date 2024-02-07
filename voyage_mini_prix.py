@@ -19,8 +19,13 @@ from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
 from selenium.common.exceptions import TimeoutException
 
+# Configuration de la fenêtre principale de l'application
+window = tk.Tk()
+window.title("Voyage_Mini_Prix")
+window.geometry('1000x500')  # Ajuste la taille de la fenêtre selon tes besoins
+window.configure(bg='lightblue')
 
-# Ajout d'une variable globale pour contrôler le clignotement
+# Variable globale pour contrôler le clignotement
 clignotement_en_cours = False
 
 # Variable globale pour contrôler l'état de la recherche
@@ -90,6 +95,27 @@ def effectuer_recherche_vols_selenium(date_debut_str, date_fin_str, lieu_depart,
 # Fonction pour ouvrir un lien dans le navigateur par défaut
 def ouvrir_lien(url):
     webbrowser.open(url, new=2)  # new=2 indique d'ouvrir dans un nouvel onglet, si possible
+
+# Obtient le chemin d'accès au dossier actuel où se trouve le script
+dossier_courant = os.path.dirname(__file__)
+chemin_images = dossier_courant 
+
+noms_drapeaux = ['france', 'royaume', 'espagne', 'italie', 'allemagne']
+labels_drapeaux = []
+chemin_images = dossier_courant  # S'assure que c'est le bon chemin du dossier courant
+
+# Crée un Frame pour contenir tous les drapeaux
+frame_drapeaux = tk.Frame(window, bg='lightblue')
+frame_drapeaux.grid(row=8, column=0, columnspan=3, padx=20, pady=2, sticky="w")  # Étendre le Frame sur les colonnes nécessaires
+
+# Réorganisez les drapeaux à l'intérieur du Frame
+for index, nom_drapeau in enumerate(noms_drapeaux):
+    chemin_image = os.path.join(chemin_images, f"{nom_drapeau}.png")
+    image_drapeau = tk.PhotoImage(file=chemin_image).subsample(2)  # Utilise subsample pour réduire la taille de l'image
+    label_drapeau = tk.Label(frame_drapeaux, image=image_drapeau, bg='lightblue')
+    label_drapeau.image = image_drapeau  # Gardez une référence
+    label_drapeau.pack(side="left", padx=5)  # Utilise pack avec side="left" pour les aligner horizontalement
+    labels_drapeaux.append(label_drapeau)
 
 def faire_clignoter_label():
     global clignotement_en_cours
@@ -237,12 +263,6 @@ aeroports= [
     ("TUF", "Tours"),
 ]
 
-# Configuration de la fenêtre principale de l'application
-window = tk.Tk()
-window.title("Voyage_Mini_Prix")
-window.geometry('1000x500')  # Ajuste la taille de la fenêtre selon tes besoins
-window.configure(bg='lightblue')
-
 style = ThemedStyle(window)
 # Appliquer un thème de ttkthemes
 style.theme_use('elegance')
@@ -263,9 +283,6 @@ largeur_champs = 20
 
 # Définis une police de caractères plus grande pour le label d'instructions
 police_grande = font.Font(family="Helvetica", size=10)  # Tu peux ajuster la taille et la famille de police ici
-
-# Obtient le chemin d'accès au dossier actuel où se trouve le script
-dossier_courant = os.path.dirname(__file__)
 
 # Construit le chemin d'accès au fichier logo.png
 chemin_logo = os.path.join(dossier_courant, 'logo.png')
@@ -302,10 +319,6 @@ label_instructions = tk.Label(
     justify="left"
 )
 label_instructions.grid(row=0, column=1, padx=1, pady=1, sticky="nsew")  # Utilise sticky="nsew" pour étendre le label dans toutes les directions
-
-# Création et placement du label d'instructions avec la nouvelle police
-# label_instructions = tk.Label(window, text="📅 Sélectionnez une fenêtre de départ, par exemple de 1 à 3 mois, pour un séjour de quelques jours. Testez et un bip final (≈ 3 min) vous avertit de la fin de la recherche ! 🏖️", bg='lightblue', wraplength=350, font=police_grande)  # Ajoute `font=police_grande` ici
-# label_instructions.grid(row=0, column=1, padx=5, pady=5, sticky="w")
 
 # Création et placement des widgets
 label_traitement = Label(window, text='', bg='lightblue')
@@ -394,7 +407,7 @@ entry_duree_sejour.insert(0, duree_sejour_defaut)
 
 # Création et positionnement de la zone de texte des résultats
 text_resultats = scrolledtext.ScrolledText(window, height=40, width=45)  
-text_resultats.grid(row=0, column=2, rowspan=12, padx=10, pady=10, sticky="nsew")
+text_resultats.grid(row=0, column=2, rowspan=10, padx=10, pady=10, sticky="nsew")
 
 # Création et positionnement du label de traitement
 # label_traitement = Label(window, text='test', bg='lightblue')
@@ -405,7 +418,6 @@ label_traitement.grid(row=7, column=0, padx=10, pady=10, sticky="e")
 # Test immédiat du clignotement
 clignotement_en_cours = False
 faire_clignoter_label()
-
 
 # Création et positionnement du label des contacts
 label_contacts = tk.Label(window, text="Création : Sotoca-Online - Version 1.2 - 022024", bg='lightblue')
