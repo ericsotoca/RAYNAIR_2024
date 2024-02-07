@@ -33,7 +33,7 @@ Vous pouvez installer ces bibliothèques en utilisant la commande `pip install` 
 4. Une fois l'application lancée, entrez vos critères de recherche et cliquez sur le bouton "Rechercher".
 
 ## Respect des règles de scraping
-Cette application respecte les directives de scraping du site web consulté. Pour les recherches impliquant Ryanair, il n'y a pas, au jour de la création du logiciel (02/2024) de directive dans le robots.txt qui mentionne spécifiquement les URL contenant /cheap-flights-beta. Merci de prendre contact avec l'auteur si celà devait changer.
+Cette application respecte les directives de scraping du site web consulté. Pour les recherches impliquant Ryanair, il n'y a pas, au jour de la création du logiciel (02/2024), de directive dans le robots.txt qui mentionne spécifiquement les URL contenant /cheap-flights-beta. Merci de prendre contact avec l'auteur si celà devait changer.
 
 ## Contribution
 Les contributions à ce projet sont les bienvenues. Si vous souhaitez contribuer, veuillez forker le dépôt, créer une branche pour vos modifications, et soumettre une pull request.
