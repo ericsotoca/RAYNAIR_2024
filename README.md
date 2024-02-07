@@ -32,6 +32,9 @@ Vous pouvez installer ces bibliothèques en utilisant la commande `pip install` 
 3. Exécutez le script Python à l'aide de la commande `python chemin_du_script.py`.
 4. Une fois l'application lancée, entrez vos critères de recherche et cliquez sur le bouton "Rechercher".
 
+## Respect des règles de scraping
+Cette application respecte les directives de scraping des sites web consultés. Pour les recherches impliquant Ryanair, nous nous assurons que l'URL spécifique utilisée pour le scraping est autorisée selon leur fichier robots.txt. Pour d'autres sites, nous suivons une démarche similaire en consultant leurs directives spécifiques.
+
 ## Contribution
 Les contributions à ce projet sont les bienvenues. Si vous souhaitez contribuer, veuillez forker le dépôt, créer une branche pour vos modifications, et soumettre une pull request.
 
