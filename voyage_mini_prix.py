@@ -146,22 +146,24 @@ def afficher_resultats(resultats_par_duree):
             for pays, infos in offres:
                 # Extraire les dates de départ et de retour
                 date_out, date_in = infos['details'].split(" | ")[0].split(" - ")
-                
+
                 # Construction de l'URL spécifique pour chaque pays
                 url = f"https://www.ryanair.com/fr/fr/cheap-flights-beta?originIata={entry_lieu_depart.get()}&destinationIata=ANY&isReturn=true&isMacDestination=false&promoCode=&adults=1&teens=0&children=0&infants=0&dateOut={date_out}&dateIn={date_in}&daysTrip={duree}&dayOfWeek=TUESDAY&isExactDate=true&outboundFromHour=00:00&outboundToHour=23:59&inboundFromHour=00:00&inboundToHour=23:59&priceValueTo={entry_prix_max.get()}&currency=EUR&isFlexibleDay=false"
                 
                 # Insérer le nom du pays avec un lien cliquable
-                text_resultats.insert(tk.END, f"{pays}", "lien")
-                text_resultats.tag_add("lien", "end-1c linestart", "end-1c")
-                text_resultats.tag_config("lien", foreground="blue", underline=1)
-                # Attacher l'événement de clic au lien avec la bonne URL
-                text_resultats.tag_bind("lien", "<Button-1>", lambda e, url=url: ouvrir_lien(url))
-                text_resultats.insert(tk.END, f": {infos['details']}\n")
+                text_resultats.insert(tk.END, f"{pays}")
+                # Ajouter un tag unique pour chaque pays pour le lien
+                tag_name = f"link_{pays.replace(' ', '_')}_{date_out.replace('-', '_')}"
+                text_resultats.tag_add(tag_name, "end-1c linestart", "end-1c")
+                text_resultats.tag_config(tag_name, foreground="blue", underline=1)
+                text_resultats.tag_bind(tag_name, "<Button-1>", lambda e, url=url: ouvrir_lien(url))
+                text_resultats.insert(tk.END, f" : {infos['details']}\n")
             text_resultats.insert(tk.END, "-"*50 + "\n")
     
     window.after(2000, label_traitement.pack_forget)
     btn_rechercher.config(state='normal')
     jouer_son_fin_processus()
+
 
 # Fonction pour ré-initialiser le formulaire et la zone de texte des résultats
 def reinitialiser_formulaire():
@@ -280,7 +282,7 @@ texte_accueil = (
     "Vous aimeriez partir dans les\n"
     "prochaines semaines, les prochains mois ?\n\n"
     "Et vous êtes plutôt du genre disponibles ?\n"
-    "Retraité ? Nomad Digital? Au chômage !...\n\n"
+    "Retraité ? Nomad Digital ? Au chômage !...\n\n"
     "Si vous pouvez choisir vos dates alors\n"
     "vous pourrez profiter des meilleurs prix !\n\n"
     "Lancez la recherche, un bip final vous\n"
@@ -406,7 +408,7 @@ faire_clignoter_label()
 
 
 # Création et positionnement du label des contacts
-label_contacts = tk.Label(window, text="Création : Sotoca-Online - Version 1.1 - 022024", bg='lightblue')
+label_contacts = tk.Label(window, text="Création : Sotoca-Online - Version 1.2 - 022024", bg='lightblue')
 label_contacts.grid(row=11, column=0, columnspan=3, pady=10, sticky="nsew")
 
 # Lancement de l'application
