@@ -1,10 +1,11 @@
 import tkinter as tk
-from ttkthemes import ThemedStyle
 from tkinter import scrolledtext, Label, Entry, Button, messagebox
 from tkinter import font
+from ttkthemes import ThemedStyle
 from tkcalendar import Calendar
 import threading
 import re
+import sys
 import os
 from tkinter import ttk
 import winsound
@@ -30,6 +31,21 @@ clignotement_en_cours = False
 
 # Variable globale pour contrôler l'état de la recherche
 recherche_active = False
+
+# Modification pour le chemin des images dans un contexte exécutable
+def chemin_relatif(fichier):
+    if getattr(sys, 'frozen', False):
+        dossier_application = sys._MEIPASS
+    else:
+        dossier_application = os.path.dirname(os.path.abspath(__file__))
+    chemin_complet = os.path.join(dossier_application, fichier)
+
+    # Ajoute un débogage pour voir si le chemin est correct
+    print(f"Chemin d'accès à la ressource: {chemin_complet}")
+
+    return chemin_complet
+
+chemin_logo = chemin_relatif('logo.png')
 
 def effectuer_recherche_vols_selenium(date_debut_str, date_fin_str, lieu_depart, durees_sejour, prix_max):
     global recherche_active
@@ -102,19 +118,18 @@ chemin_images = dossier_courant
 
 noms_drapeaux = ['france', 'royaume', 'espagne', 'italie', 'allemagne']
 labels_drapeaux = []
-chemin_images = dossier_courant  # S'assure que c'est le bon chemin du dossier courant
 
 # Crée un Frame pour contenir tous les drapeaux
 frame_drapeaux = tk.Frame(window, bg='lightblue')
 frame_drapeaux.grid(row=8, column=0, columnspan=3, padx=20, pady=2, sticky="w")  # Étendre le Frame sur les colonnes nécessaires
 
-# Réorganisez les drapeaux à l'intérieur du Frame
+# Création du Frame pour les drapeaux et chargement des images avec chemin_relatif
 for index, nom_drapeau in enumerate(noms_drapeaux):
-    chemin_image = os.path.join(chemin_images, f"{nom_drapeau}.png")
-    image_drapeau = tk.PhotoImage(file=chemin_image).subsample(2)  # Utilise subsample pour réduire la taille de l'image
+    chemin_image = chemin_relatif(f"{nom_drapeau}.png")
+    image_drapeau = tk.PhotoImage(file=chemin_image).subsample(2)
     label_drapeau = tk.Label(frame_drapeaux, image=image_drapeau, bg='lightblue')
-    label_drapeau.image = image_drapeau  # Gardez une référence
-    label_drapeau.pack(side="left", padx=5)  # Utilise pack avec side="left" pour les aligner horizontalement
+    label_drapeau.image = image_drapeau
+    label_drapeau.pack(side="left", padx=5)
     labels_drapeaux.append(label_drapeau)
 
 def faire_clignoter_label():
@@ -189,7 +204,6 @@ def afficher_resultats(resultats_par_duree):
     window.after(2000, label_traitement.pack_forget)
     btn_rechercher.config(state='normal')
     jouer_son_fin_processus()
-
 
 # Fonction pour ré-initialiser le formulaire et la zone de texte des résultats
 def reinitialiser_formulaire():
@@ -283,9 +297,6 @@ largeur_champs = 20
 
 # Définis une police de caractères plus grande pour le label d'instructions
 police_grande = font.Font(family="Helvetica", size=10)  # Tu peux ajuster la taille et la famille de police ici
-
-# Construit le chemin d'accès au fichier logo.png
-chemin_logo = os.path.join(dossier_courant, 'logo.png')
 
 # Création et placement du logo
 logo_image = tk.PhotoImage(file=chemin_logo)
