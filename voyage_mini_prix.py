@@ -1,4 +1,5 @@
 import tkinter as tk
+from ttkthemes import ThemedStyle
 from tkinter import scrolledtext, Label, Entry, Button, messagebox
 from tkinter import font
 from tkcalendar import Calendar
@@ -17,14 +18,22 @@ from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
 from selenium.common.exceptions import TimeoutException
 
+# Ajout d'une variable globale pour contrôler le clignotement
+clignotement_en_cours = False
+
+# Variable globale pour contrôler l'état de la recherche
+recherche_active = False
+
 def effectuer_recherche_vols_selenium(date_debut_str, date_fin_str, lieu_depart, durees_sejour, prix_max):
+    global recherche_active
     options = webdriver.FirefoxOptions()
     options.add_argument("--headless")
     service = FirefoxService(GeckoDriverManager().install())
     driver = webdriver.Firefox(service=service, options=options)
     
     date_debut = datetime.strptime(date_debut_str, "%d-%m-%Y")
-    date_fin = datetime.strptime(date_fin_str, "%d-%m-%Y")
+    duree_max_sejour = max([int(duree.strip()) for duree in durees_sejour.split(',')])
+    date_fin = datetime.strptime(date_fin_str, "%d-%m-%Y") + timedelta(days=duree_max_sejour)
 
     meilleures_offres_par_duree = {}
 
@@ -32,7 +41,11 @@ def effectuer_recherche_vols_selenium(date_debut_str, date_fin_str, lieu_depart,
         duree_sejour = int(duree_sejour_str.strip())
         meilleures_offres = {}
         date_actuelle = date_debut
-        while date_actuelle <= date_fin:
+        while date_actuelle + timedelta(days=duree_sejour) <= date_fin:
+            if not recherche_active:
+                print("Recherche arrêtée par l'utilisateur.")
+                driver.quit()
+                return None
             date_out = date_actuelle.strftime("%Y-%m-%d")
             date_in = (date_actuelle + timedelta(days=duree_sejour)).strftime("%Y-%m-%d")
 
@@ -61,6 +74,7 @@ def effectuer_recherche_vols_selenium(date_debut_str, date_fin_str, lieu_depart,
 
                         if pays not in meilleures_offres or meilleures_offres[pays]["prix"] > prix:
                             meilleures_offres[pays] = {"prix": prix, "details": details_vol}
+        
             except TimeoutException:
                 print("TimeoutException pour la date de départ:", date_out)
 
@@ -71,12 +85,24 @@ def effectuer_recherche_vols_selenium(date_debut_str, date_fin_str, lieu_depart,
     driver.quit()
     return meilleures_offres_par_duree
 
+def faire_clignoter_label():
+    global clignotement_en_cours
+    if clignotement_en_cours:
+        current_text = label_traitement.cget("text")
+        new_text = "" if current_text else "Recherche en cours..."
+        label_traitement.config(text=new_text)
+        # Continue à alterner le texte toutes les 500 ms
+        window.after(500, faire_clignoter_label)
+
 # Fonction appelée lorsque l'utilisateur clique sur le bouton Rechercher
 def lancer_recherche_vols():
-    label_traitement.config(text='Recherche en cours...', fg='red')
-    label_traitement.grid(row=7, column=0, padx=10, pady=10, sticky="e")
+    global recherche_active
+    recherche_active = True
+    global clignotement_en_cours
+    clignotement_en_cours = True  # Démarre le clignotement
+    faire_clignoter_label()  # Commence à faire clignoter le texte
     btn_rechercher.config(state='disabled')
-    threading.Thread(target=rechercher_vols).start()
+    threading.Thread(target=rechercher_vols).start()    
 
 # Fonction pour exécuter la recherche de vols et mettre à jour l'interface avec les résultats
 def rechercher_vols():
@@ -102,6 +128,9 @@ def jouer_son_fin_processus():
 
 # Modification de la fonction pour intégrer l'effet sonore après l'affichage des résultats
 def afficher_resultats(resultats_par_duree):
+    global clignotement_en_cours
+    clignotement_en_cours = False  # Arrête le clignotement
+    label_traitement.config(text='')  # Efface le texte
     text_resultats.delete(1.0, tk.END)
     if not resultats_par_duree:
         messagebox.showinfo("Aucune offre", "Aucune offre trouvée pour les critères spécifiés.")
@@ -118,6 +147,11 @@ def afficher_resultats(resultats_par_duree):
 
 # Fonction pour ré-initialiser le formulaire et la zone de texte des résultats
 def reinitialiser_formulaire():
+    global recherche_active, clignotement_en_cours
+    recherche_active = False  # Pour arrêter la recherche
+    clignotement_en_cours = False  # Pour arrêter le clignotement
+    label_traitement.config(text='')  # Efface le texte du label
+
     entry_date_debut.delete(0, tk.END)
     entry_date_fin.delete(0, tk.END)
     entry_lieu_depart.delete(0, tk.END)
@@ -129,7 +163,6 @@ def reinitialiser_formulaire():
     entry_duree_sejour.insert(0, duree_sejour_defaut)
     
     text_resultats.delete(1.0, tk.END)
-    label_traitement.config(text='', bg='lightblue')
     btn_rechercher.config(state='normal')  # Réactive le bouton "Rechercher"
 
 def choisir_date_debut():
@@ -190,12 +223,20 @@ window.title("Voyage_Mini_Prix")
 window.geometry('1000x500')  # Ajuste la taille de la fenêtre selon tes besoins
 window.configure(bg='lightblue')
 
+style = ThemedStyle(window)
+# Appliquer un thème de ttkthemes
+style.theme_use('elegance')
+
 # Configuration de la grille
 window.grid_rowconfigure(0, weight=1)
 window.grid_rowconfigure(1, weight=1)
 window.grid_columnconfigure(0, weight=0)
 window.grid_columnconfigure(1, weight=1)
 window.grid_columnconfigure(2, weight=2)
+
+# Initialiser le style TTK et choisir le thème
+style = ttk.Style()
+style.theme_use('clam')  # Remplacez 'clam' par le thème de votre choix
 
 # Définit une largeur pour les champs
 largeur_champs = 20  
@@ -218,11 +259,14 @@ police_grande = font.Font(family="Helvetica", size=10)  # Tu peux ajuster la tai
 
 # Texte d'accueil mis à jour avec des sauts de ligne pour une meilleure présentation
 texte_accueil = (
-    "📅 Sélectionnez une fenêtre de départ,\n"
-    "par exemple de 1 à 3 mois,\n"
-    "pour un séjour de quelques jours.\n"
-    "Testez et un bip final (≈ 3 min)\n"
-    "vous avertit de la fin de la recherche ! 🏖️"
+    "📅 Sélectionnez une fenêtre de départ pour\n"
+    "votre voyage et indiquez le début de votre\n"
+    "période de retour.\n\n"
+    "La recherche de vols tiendra compte de la\n"
+    "durée du séjour pour déterminer la date\n"
+    "de retour.\n\n"
+    "Un bip final vous avertira, dans quelques\n"
+    "minutes ! 🏖️"
 )
 
 # Définis une largeur de wrap adaptée pour que le texte reste dans sa colonne sans l'élargir
@@ -245,8 +289,8 @@ label_instructions.grid(row=0, column=1, padx=1, pady=1, sticky="nsew")  # Utili
 
 # Création et placement des widgets
 label_traitement = Label(window, text='', bg='lightblue')
-label_date_debut = Label(window, text="Début de la période de départ")
-label_date_fin = Label(window, text="Fin de la période de départ")
+label_date_debut = Label(window, text="Début de la plage de recherche")
+label_date_fin = Label(window, text="Fin de la plage de recherche")
 label_lieu_depart = Label(window, text="Aéroport de départ")
 label_duree_sejour = Label(window, text="Durée du séjour")
 label_prix_max = Label(window, text="Prix max en €")
@@ -333,10 +377,18 @@ text_resultats = scrolledtext.ScrolledText(window, height=40, width=45)
 text_resultats.grid(row=0, column=2, rowspan=12, padx=10, pady=10, sticky="nsew")
 
 # Création et positionnement du label de traitement
-label_traitement = Label(window, text='', bg='lightblue')
+# label_traitement = Label(window, text='test', bg='lightblue')
+
+label_traitement = Label(window, text="Démarrer le processus !", bg='lightblue')
+label_traitement.grid(row=7, column=0, padx=10, pady=10, sticky="e")
+
+# Test immédiat du clignotement
+clignotement_en_cours = False
+faire_clignoter_label()
+
 
 # Création et positionnement du label des contacts
-label_contacts = tk.Label(window, text="Création : Sotoca Online - Version 1.1 - 022024", bg='lightblue')
+label_contacts = tk.Label(window, text="Création : Sotoca-Online - Version 1.1 - 022024", bg='lightblue')
 label_contacts.grid(row=11, column=0, columnspan=3, pady=10, sticky="nsew")
 
 # Lancement de l'application
