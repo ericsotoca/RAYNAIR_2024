@@ -238,7 +238,9 @@ def effectuer_recherche_vols_selenium(date_debut_str, date_fin_str, lieu_depart,
                             pays = "Pays-Bas"
                         if pays == "Uni":
                             pays = "Royaume-Uni"
-
+                        if pays == "République":
+                            pays = "République tchèque"
+                         
                         if pays not in meilleures_offres or meilleures_offres[pays]["prix"] > prix:
                             meilleures_offres[pays] = {"prix": prix, "details": details_vol}
         
@@ -380,11 +382,14 @@ def reinitialiser_formulaire():
     entry_date_fin.delete(0, tk.END)
     entry_lieu_depart.delete(0, tk.END)
     entry_duree_sejour.delete(0, tk.END)
+    entry_prix_max.delete(0, tk.END)
     
+    # Réinsérer les valeurs par défaut
     entry_date_debut.insert(0, date_debut_defaut)
     entry_date_fin.insert(0, date_fin_defaut)
     entry_lieu_depart.insert(0, lieu_depart_defaut)
     entry_duree_sejour.insert(0, duree_sejour_defaut)
+    entry_prix_max.insert(0, prix_max_defaut)    
     
     text_resultats.delete(1.0, tk.END)
     btn_rechercher.config(state='normal')  # Réactive le bouton "Rechercher"
