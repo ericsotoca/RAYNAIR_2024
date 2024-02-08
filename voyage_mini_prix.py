@@ -145,7 +145,6 @@ traductions = {
         'choisir': "Elegir",
         'creation_info': "Creación: Sotoca-Online.com - Versión 1.3 - 022024",
     },
-    # Correction de la section 'allemand' avec les traductions allemandes appropriées
     'allemagne': {
         'titre': "Reise_zum_Kleinen_Preis",
         'texte_accueil': ("Möchten Sie in den kommenden\nWochen oder Monaten verreisen?\n\n"
@@ -254,10 +253,6 @@ def effectuer_recherche_vols_selenium(date_debut_str, date_fin_str, lieu_depart,
     driver.quit()
     return meilleures_offres_par_duree
 
-# Fonction pour ouvrir un lien dans le navigateur par défaut
-# def ouvrir_lien(url):
-#    webbrowser.open(url, new=2) 
-    
 def ouvrir_lien(url):
     def callback(e):
         webbrowser.open(url, new=2)
@@ -274,7 +269,7 @@ labels_drapeaux = []
 frame_drapeaux = tk.Frame(window, bg='lightblue')
 frame_drapeaux.grid(row=8, column=0, columnspan=3, padx=20, pady=2, sticky="w")  # Étendre le Frame sur les colonnes nécessaires
    
-# Création du Frame pour les drapeaux et chargement des images avec chemin_relatif (modifié pour associer les actions de changement de langue)
+# Création du Frame pour les drapeaux et chargement des images avec chemin_relatif
 # Utilise la fonction ci-dessus pour définir l'action du bouton
 for index, nom_drapeau in enumerate(noms_drapeaux):
     chemin_image = chemin_relatif(f"{nom_drapeau}.png")
@@ -300,7 +295,7 @@ def lancer_recherche_vols():
     global recherche_active, clignotement_en_cours
     if not recherche_active:
         recherche_active = True
-        clignotement_en_cours = True  # Assurez-vous de définir cette variable sur True pour commencer le clignotement
+        clignotement_en_cours = True  # définir cette variable sur True pour commencer le clignotement
         faire_clignoter_label()  # Commencez le clignotement
         btn_rechercher.config(state='disabled')
         progress['value'] = 0
@@ -329,7 +324,6 @@ def rechercher_vols():
         recherche_active = False
         window.after(0, update_progress)  # Assurez-vous de mettre à jour l'interface utilisateur dans le thread principal
 
-
 # Fonction pour jouer un effet sonore de fin de processus
 def jouer_son_fin_processus():
     # Joue le son "bip-bip" deux fois : Fréquence = 1000 Hz, Durée = 200 ms
@@ -348,45 +342,35 @@ def afficher_resultats(resultats_par_duree):
         messagebox.showinfo("Aucune offre", "Aucune offre trouvée pour les critères spécifiés.")
         print("Aucun résultat à afficher.")  # Débogage
     else:
+        
         for duree, offres in resultats_par_duree.items():
-            for duree, offres in resultats_par_duree.items():
-                text_resultats.insert(tk.END, f"Voyage de {duree} jours\n\n")
-                for pays, infos in offres:
-                    # Extrais les détails du vol qui incluent les dates au format international et le prix
-                    details_vol = infos['details']  # Cette variable devrait contenir "YYYY-MM-DD - YYYY-MM-DD | Prix: €XXX.XX"
-                    date_out, rest = details_vol.split(" - ")
-                    date_in, prix_vol = rest.split(" | ")
-                    
-                    # Convertis les dates au format français pour l'affichage
-                    date_out_affichage_fr = datetime.strptime(date_out, "%Y-%m-%d").strftime("%d-%m-%Y")
-                    date_in_affichage_fr = datetime.strptime(date_in, "%Y-%m-%d").strftime("%d-%m-%Y")
-                    
-                    # Construction de l'URL avec les dates au format international pour les liens
-                    url = f"https://www.ryanair.com/fr/fr/cheap-flights-beta?originIata={entry_lieu_depart.get()}&destinationIata=ANY&isReturn=true&isMacDestination=false&promoCode=&adults=1&teens=0&children=0&infants=0&dateOut={date_out}&dateIn={date_in}&daysTrip={duree}&dayOfWeek=TUESDAY&isExactDate=true&outboundFromHour=00:00&outboundToHour=23:59&inboundFromHour=00:00&inboundToHour=23:59&priceValueTo={entry_prix_max.get()}&currency=EUR&isFlexibleDay=false"
-                    
-                    # Insère le nom du pays (qui sera cliquable)
-                    text_resultats.insert(tk.END, pays)
-                    
-                    # Ajoute le tag de lien uniquement au nom du pays
-                    tag_name = f"link_{pays.replace(' ', '_')}_{date_out.replace('-', '_')}"
-                    text_resultats.tag_add(tag_name, "end-1c linestart", "end-1c")
-                    text_resultats.tag_config(tag_name, foreground="blue", underline=1)
-                    text_resultats.tag_bind(tag_name, "<Button-1>", ouvrir_lien(url))
+            text_resultats.insert(tk.END, f"Voyage de {duree} jours\n\n")
+            for pays, infos in offres:
+                # Extrais les détails du vol qui incluent les dates au format international et le prix
+                details_vol = infos['details']  # Cette variable devrait contenir "YYYY-MM-DD - YYYY-MM-DD | Prix: €XXX.XX"
+                date_out, rest = details_vol.split(" - ")
+                date_in, prix_vol = rest.split(" | ")
+                
+                # Convertis les dates au format français pour l'affichage
+                date_out_affichage_fr = datetime.strptime(date_out, "%Y-%m-%d").strftime("%d-%m-%Y")
+                date_in_affichage_fr = datetime.strptime(date_in, "%Y-%m-%d").strftime("%d-%m-%Y")
+                
+                # Construction de l'URL avec les dates au format international pour les liens
+                url = f"https://www.ryanair.com/fr/fr/cheap-flights-beta?originIata={entry_lieu_depart.get()}&destinationIata=ANY&isReturn=true&isMacDestination=false&promoCode=&adults=1&teens=0&children=0&infants=0&dateOut={date_out}&dateIn={date_in}&daysTrip={duree}&dayOfWeek=TUESDAY&isExactDate=true&outboundFromHour=00:00&outboundToHour=23:59&inboundFromHour=00:00&inboundToHour=23:59&priceValueTo={entry_prix_max.get()}&currency=EUR&isFlexibleDay=false"
+                
+                # Insère le nom du pays (qui sera cliquable)
+                text_resultats.insert(tk.END, pays)
+                
+                # Ajoute le tag de lien uniquement au nom du pays
+                tag_name = f"link_{pays.replace(' ', '_')}_{date_out.replace('-', '_')}"
+                text_resultats.tag_add(tag_name, "end-1c linestart", "end-1c")
+                text_resultats.tag_config(tag_name, foreground="blue", underline=1)
+                text_resultats.tag_bind(tag_name, "<Button-1>", ouvrir_lien(url))
 
-                    # Continue d'insérer le reste des détails du vol sans les rendre cliquables
-                    text_resultats.insert(tk.END, f" : {date_out_affichage_fr} - {date_in_affichage_fr} | {prix_vol}\n")
-                    
-                    # Insère le texte dans la zone de texte avec les dates au format français et le prix
-                    # text_resultats.insert(tk.END, f"{pays} : {date_out_affichage_fr} - {date_in_affichage_fr} | {prix_vol}\n")
-                                        
-                    # Ajouter un tag unique pour chaque pays pour le lien
-                    # tag_name = f"link_{pays.replace(' ', '_')}_{date_out.replace('-', '_')}"
-                    # text_resultats.tag_add(tag_name, "end-2l linestart", "end-1l lineend")
-                    # text_resultats.tag_config(tag_name, foreground="blue", underline=1)
-                    # text_resultats.tag_bind(tag_name, "<Button-1>", ouvrir_lien(url))                
-                    
-                text_resultats.insert(tk.END, "-"*50 + "\n")
-
+                # Continue d'insérer le reste des détails du vol sans les rendre cliquables
+                text_resultats.insert(tk.END, f" : {date_out_affichage_fr} - {date_in_affichage_fr} | {prix_vol}\n")
+                
+            text_resultats.insert(tk.END, "-"*50 + "\n")
             
         # Insérez le texte explicatif ici
         texte_explicatif = "\nCliquez sur les noms des pays pour voir les offres\ndétaillées par ville sur le site de Ryanair."
@@ -473,7 +457,7 @@ aeroports= [
 
 # Initialisation de style avant son utilisation
 style = ttk.Style(window)
-style.theme_use('default')  # Utilisez le thème par défaut ou un autre thème comme 'clam', 'alt', 'classic', etc.
+style.theme_use('default')  # autre thème comme 'clam', 'alt', 'classic', etc.
 
 # Configurez le style de la barre de progression une fois que `style` a été initialisé
 style.configure("green.Horizontal.TProgressbar", troughcolor='white', background='green')
@@ -487,7 +471,6 @@ progress.grid(row=8, column=2, padx=10, pady=10, sticky="ew")
 # Initialisez la barre de progression avec un maximum et une valeur de départ
 progress["maximum"] = 100
 progress["value"] = 0
-
 
 # Configuration de la grille
 window.grid_rowconfigure(0, weight=1)
@@ -594,9 +577,9 @@ combo_aeroports = ttk.Combobox(window, values=[f"{code} {nom}" for code, nom in 
 combo_aeroports.bind("<<ComboboxSelected>>", choisir_aeroport)
 
 # Positionnement des boutons de calendrier plus proche des Entry
-btn_date_debut.grid(row=2, column=1, padx=(0, 135), pady=5, sticky="e")  # Décalage vers la gauche avec padx
-btn_date_fin.grid(row=3, column=1, padx=(0, 135), pady=5, sticky="e")    # Décalage vers la gauche avec padx
-combo_aeroports.grid(row=4, column=1, padx=(0, 15), pady=5, sticky="e") # Décalage vers la gauche avec padx
+btn_date_debut.grid(row=2, column=1, padx=(0, 135), pady=5, sticky="e")  
+btn_date_fin.grid(row=3, column=1, padx=(0, 135), pady=5, sticky="e")    
+combo_aeroports.grid(row=4, column=1, padx=(0, 15), pady=5, sticky="e") 
 
 # Positionnement des widgets
 label_logo.grid(row=0, column=0, padx=10, pady=10, sticky="w")
@@ -612,7 +595,7 @@ entry_date_fin = Entry(window, width=largeur_champs)
 entry_lieu_depart = Entry(window, width=largeur_champs)
 entry_duree_sejour = Entry(window, width=largeur_champs)
 
-# Positionnement des widgets de saisie (s'assurer que les valeurs de row sont correctes)
+# Positionnement des widgets de saisie 
 entry_date_debut.grid(row=2, column=1, padx=10, pady=5, sticky="w")
 entry_date_fin.grid(row=3, column=1, padx=10, pady=5, sticky="w")
 entry_lieu_depart.grid(row=4, column=1, padx=10, pady=5, sticky="w")
@@ -625,11 +608,8 @@ entry_lieu_depart.insert(0, lieu_depart_defaut)
 entry_duree_sejour.insert(0, duree_sejour_defaut)
 
 # Création et positionnement de la zone de texte des résultats
-text_resultats = scrolledtext.ScrolledText(window, height=40, width=45)  
+text_resultats = scrolledtext.ScrolledText(window, height=40, width=50)  
 text_resultats.grid(row=0, column=2, rowspan=8, padx=10, pady=10, sticky="nsew")
-
-# Création et positionnement du label de traitement
-# label_traitement = Label(window, text='test', bg='lightblue')
 
 label_traitement = Label(window, text="Démarrer le processus !", bg='lightblue')
 label_traitement.grid(row=8, column=1, padx=10, pady=10, sticky="e")
