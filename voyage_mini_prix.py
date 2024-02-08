@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import scrolledtext, Label, Entry, Button, messagebox
 from tkinter import font
-from ttkthemes import ThemedStyle
+# from ttkthemes import ThemedStyle
 from tkcalendar import Calendar
 import threading
 import re
@@ -31,6 +31,29 @@ clignotement_en_cours = False
 
 # Variable globale pour contrôler l'état de la recherche
 recherche_active = False
+
+# Fonction pour démarrer la mise à jour de la barre de progression
+def start_progress():
+    progress["value"] = 0  # Réinitialisez la valeur de départ
+    window.after(100, update_progress)
+
+# Ajustez votre fonction update_progress pour tenir compte de recherche_active
+def update_progress():
+    global recherche_active 
+    if recherche_active:
+        # Mise à jour plus lente pour simuler une longue opération
+        new_value = progress['value'] + (100 / (15 * 60 / 0.5))  # Exemple: complète la barre en 15 minutes
+        if new_value < progress['maximum']:
+            progress['value'] = new_value
+            window.after(500, update_progress)  # Mettez à jour toutes les 0.5 secondes
+        else:
+            progress['value'] = progress['maximum']
+            recherche_active = False  # Assurez-vous d'arrêter la progression lorsque terminé
+            btn_rechercher.config(state='normal')
+            messagebox.showinfo("Recherche terminée", "La recherche est terminée.")
+    else:
+        progress['value'] = 0  # Réinitialisez la barre si la recherche est arrêtée
+        btn_rechercher.config(state='normal')
 
 # Modification pour le chemin des images dans un contexte exécutable
 def chemin_relatif(fichier):
@@ -187,10 +210,20 @@ def effectuer_recherche_vols_selenium(date_debut_str, date_fin_str, lieu_depart,
                 print("Recherche arrêtée par l'utilisateur.")
                 driver.quit()
                 return None
-            date_out = date_actuelle.strftime("%Y-%m-%d")
-            date_in = (date_actuelle + timedelta(days=duree_sejour)).strftime("%Y-%m-%d")
+            # date_out = date_actuelle.strftime("%Y-%m-%d")
+            # date_in = (date_actuelle + timedelta(days=duree_sejour)).strftime("%Y-%m-%d")
+            # Conversion des dates au format souhaité
+            date_out = date_actuelle.strftime("%d-%m-%Y")
+            date_in = (date_actuelle + timedelta(days=duree_sejour)).strftime("%d-%m-%Y")
+            # Conversion des dates pour l'affichage
+            # date_out_display = date_actuelle.strftime("%d-%m-%Y")
+            # date_in_display = (date_actuelle + timedelta(days=duree_sejour)).strftime("%d-%m-%Y")
 
-            url = f"https://www.ryanair.com/fr/fr/cheap-flights-beta?originIata={lieu_depart}&destinationIata=ANY&isReturn=true&isMacDestination=false&promoCode=&adults=1&teens=0&children=0&infants=0&dateOut={date_out}&dateIn={date_in}&daysTrip={duree_sejour}&dayOfWeek=TUESDAY&isExactDate=true&outboundFromHour=00:00&outboundToHour=23:59&inboundFromHour=00:00&inboundToHour=23:59&priceValueTo={prix_max}&currency=EUR&isFlexibleDay=false"
+            # Gardez le format original pour les URLs
+            date_out_url = date_actuelle.strftime("%Y-%m-%d")
+            date_in_url = (date_actuelle + timedelta(days=duree_sejour)).strftime("%Y-%m-%d")
+
+            url = f"https://www.ryanair.com/fr/fr/cheap-flights-beta?originIata={lieu_depart}&destinationIata=ANY&isReturn=true&isMacDestination=false&promoCode=&adults=1&teens=0&children=0&infants=0&dateOut={date_out_url}&dateIn={date_in_url}&daysTrip={duree_sejour}&dayOfWeek=TUESDAY&isExactDate=true&outboundFromHour=00:00&outboundToHour=23:59&inboundFromHour=00:00&inboundToHour=23:59&priceValueTo={prix_max}&currency=EUR&isFlexibleDay=false"
             
             driver.get(url)
             try:
@@ -250,29 +283,35 @@ for index, nom_drapeau in enumerate(noms_drapeaux):
     label_drapeau = tk.Button(frame_drapeaux, image=image_drapeau, bg='lightblue', command=action_changement_langue)
     label_drapeau.image = image_drapeau
     label_drapeau.pack(side="left", padx=5)
-
+       
 def faire_clignoter_label():
     global clignotement_en_cours
+    print("faire_clignoter_label appelée, clignotement_en_cours:", clignotement_en_cours)  # Ajout pour le débogage
     if clignotement_en_cours:
         current_text = label_traitement.cget("text")
         new_text = "" if current_text else "Recherche en cours..."
         label_traitement.config(text=new_text)
-        # Continue à alterner le texte toutes les 500 ms
         window.after(500, faire_clignoter_label)
+    else:
+        label_traitement.config(text="")  # Assurez-vous que le texte est vide si le clignotement est désactivé
 
 # Fonction appelée lorsque l'utilisateur clique sur le bouton Rechercher
 def lancer_recherche_vols():
-    global recherche_active
-    recherche_active = True
-    global clignotement_en_cours
-    clignotement_en_cours = True  # Démarre le clignotement
-    faire_clignoter_label()  # Commence à faire clignoter le texte
-    btn_rechercher.config(state='disabled')
-    threading.Thread(target=rechercher_vols).start()    
+    global recherche_active, clignotement_en_cours
+    if not recherche_active:
+        recherche_active = True
+        clignotement_en_cours = True  # Assurez-vous de définir cette variable sur True pour commencer le clignotement
+        faire_clignoter_label()  # Commencez le clignotement
+        btn_rechercher.config(state='disabled')
+        progress['value'] = 0
+        start_progress()
+        threading.Thread(target=rechercher_vols, daemon=True).start()
 
 # Fonction pour exécuter la recherche de vols et mettre à jour l'interface avec les résultats
 def rechercher_vols():
-    global resultats
+    global recherche_active
+    recherche_active = True
+    start_progress()  # Démarrez la progression ici
     try:
         date_debut_str = entry_date_debut.get()
         date_fin_str = entry_date_fin.get()
@@ -281,9 +320,15 @@ def rechercher_vols():
         prix_max = float(entry_prix_max.get())
 
         resultats_par_duree = effectuer_recherche_vols_selenium(date_debut_str, date_fin_str, lieu_depart, durees_sejour, prix_max)
+        print(f"Résultats obtenus: {resultats_par_duree}")  # Débogage
         window.after(0, afficher_resultats, resultats_par_duree)
     except Exception as e:
         window.after(0, lambda: messagebox.showerror("Erreur", f"Une erreur est survenue lors de la recherche : {e}"))
+        print(f"Erreur lors de la recherche: {e}")  # Débogage
+    finally:
+        recherche_active = False
+        window.after(0, update_progress)  # Assurez-vous de mettre à jour l'interface utilisateur dans le thread principal
+
 
 # Fonction pour jouer un effet sonore de fin de processus
 def jouer_son_fin_processus():
@@ -298,17 +343,20 @@ def afficher_resultats(resultats_par_duree):
     clignotement_en_cours = False  # Arrête le clignotement
     label_traitement.config(text='')  # Efface le texte
     text_resultats.delete(1.0, tk.END)
+    print("Affichage des résultats...")  # Débogage
     if not resultats_par_duree:
         messagebox.showinfo("Aucune offre", "Aucune offre trouvée pour les critères spécifiés.")
+        print("Aucun résultat à afficher.")  # Débogage
     else:
         for duree, offres in resultats_par_duree.items():
-            text_resultats.insert(tk.END, f"Voyage de {duree} jours\n")
+            text_resultats.insert(tk.END, f"Voyage de {duree} jours\n\n")
+            print(f"Résultats pour {duree} jours:")  # Débogage
             for pays, infos in offres:
                 # Extraire les dates de départ et de retour
                 date_out, date_in = infos['details'].split(" | ")[0].split(" - ")
 
                 # Construction de l'URL spécifique pour chaque pays
-                url = f"https://www.ryanair.com/fr/fr/cheap-flights-beta?originIata={entry_lieu_depart.get()}&destinationIata=ANY&isReturn=true&isMacDestination=false&promoCode=&adults=1&teens=0&children=0&infants=0&dateOut={date_out}&dateIn={date_in}&daysTrip={duree}&dayOfWeek=TUESDAY&isExactDate=true&outboundFromHour=00:00&outboundToHour=23:59&inboundFromHour=00:00&inboundToHour=23:59&priceValueTo={entry_prix_max.get()}&currency=EUR&isFlexibleDay=false"
+                url = f"https://www.ryanair.com/fr/fr/cheap-flights-beta?originIata={entry_lieu_depart.get()}&destinationIata=ANY&isReturn=true&isMacDestination=false&promoCode=&adults=1&teens=0&children=0&infants=0&dateOut={date_out_url}&dateIn={date_in_url}&daysTrip={duree}&dayOfWeek=TUESDAY&isExactDate=true&outboundFromHour=00:00&outboundToHour=23:59&inboundFromHour=00:00&inboundToHour=23:59&priceValueTo={entry_prix_max.get()}&currency=EUR&isFlexibleDay=false"
                 
                 # Insérer le nom du pays avec un lien cliquable
                 text_resultats.insert(tk.END, f"{pays}")
@@ -319,6 +367,10 @@ def afficher_resultats(resultats_par_duree):
                 text_resultats.tag_bind(tag_name, "<Button-1>", lambda e, url=url: ouvrir_lien(url))
                 text_resultats.insert(tk.END, f" : {infos['details']}\n")
             text_resultats.insert(tk.END, "-"*50 + "\n")
+            
+        # Insérez le texte explicatif ici
+        texte_explicatif = "\nCliquez sur les noms des pays pour voir les offres\ndétaillées par ville sur le site de Ryanair."
+        text_resultats.insert(tk.END, texte_explicatif)
     
     window.after(2000, label_traitement.pack_forget)
     btn_rechercher.config(state='normal')
@@ -396,16 +448,30 @@ aeroports= [
     ("TUF", "Tours"),
 ]
 
-style = ThemedStyle(window)
-# Appliquer un thème de ttkthemes
-style.theme_use('elegance')
+# Initialisation de style avant son utilisation
+style = ttk.Style(window)
+style.theme_use('default')  # Utilisez le thème par défaut ou un autre thème comme 'clam', 'alt', 'classic', etc.
+
+# Configurez le style de la barre de progression une fois que `style` a été initialisé
+style.configure("green.Horizontal.TProgressbar", troughcolor='white', background='green')
+
+# Créez la barre de progression en utilisant le style configuré
+progress = ttk.Progressbar(window, style="green.Horizontal.TProgressbar", orient="horizontal", mode="determinate", length=200)
+
+# Positionnez la barre de progression dans la grille avec un espace suffisant
+progress.grid(row=8, column=2, padx=10, pady=10, sticky="ew")
+
+# Initialisez la barre de progression avec un maximum et une valeur de départ
+progress["maximum"] = 100
+progress["value"] = 0
+
 
 # Configuration de la grille
 window.grid_rowconfigure(0, weight=1)
 window.grid_rowconfigure(1, weight=1)
 window.grid_columnconfigure(0, weight=0)
 window.grid_columnconfigure(1, weight=1)
-window.grid_columnconfigure(2, weight=2)
+window.grid_columnconfigure(2, weight=1)
 
 # Initialiser le style TTK et choisir le thème
 style = ttk.Style()
@@ -537,13 +603,13 @@ entry_duree_sejour.insert(0, duree_sejour_defaut)
 
 # Création et positionnement de la zone de texte des résultats
 text_resultats = scrolledtext.ScrolledText(window, height=40, width=45)  
-text_resultats.grid(row=0, column=2, rowspan=10, padx=10, pady=10, sticky="nsew")
+text_resultats.grid(row=0, column=2, rowspan=8, padx=10, pady=10, sticky="nsew")
 
 # Création et positionnement du label de traitement
 # label_traitement = Label(window, text='test', bg='lightblue')
 
 label_traitement = Label(window, text="Démarrer le processus !", bg='lightblue')
-label_traitement.grid(row=7, column=0, padx=10, pady=10, sticky="e")
+label_traitement.grid(row=8, column=1, padx=10, pady=10, sticky="e")
 
 # Test immédiat du clignotement
 clignotement_en_cours = False
