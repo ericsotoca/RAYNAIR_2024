@@ -255,8 +255,13 @@ def effectuer_recherche_vols_selenium(date_debut_str, date_fin_str, lieu_depart,
     return meilleures_offres_par_duree
 
 # Fonction pour ouvrir un lien dans le navigateur par défaut
+# def ouvrir_lien(url):
+#    webbrowser.open(url, new=2) 
+    
 def ouvrir_lien(url):
-    webbrowser.open(url, new=2)  # new=2 indique d'ouvrir dans un nouvel onglet, si possible
+    def callback(e):
+        webbrowser.open(url, new=2)
+    return callback
 
 # Obtient le chemin d'accès au dossier actuel où se trouve le script
 dossier_courant = os.path.dirname(__file__)
@@ -344,24 +349,44 @@ def afficher_resultats(resultats_par_duree):
         print("Aucun résultat à afficher.")  # Débogage
     else:
         for duree, offres in resultats_par_duree.items():
-            text_resultats.insert(tk.END, f"Voyage de {duree} jours\n\n")
-            print(f"Résultats pour {duree} jours:")  # Débogage
-            for pays, infos in offres:
-                # Extraire les dates de départ et de retour
-                date_out, date_in = infos['details'].split(" | ")[0].split(" - ")
+            for duree, offres in resultats_par_duree.items():
+                text_resultats.insert(tk.END, f"Voyage de {duree} jours\n\n")
+                for pays, infos in offres:
+                    # Extrais les détails du vol qui incluent les dates au format international et le prix
+                    details_vol = infos['details']  # Cette variable devrait contenir "YYYY-MM-DD - YYYY-MM-DD | Prix: €XXX.XX"
+                    date_out, rest = details_vol.split(" - ")
+                    date_in, prix_vol = rest.split(" | ")
+                    
+                    # Convertis les dates au format français pour l'affichage
+                    date_out_affichage_fr = datetime.strptime(date_out, "%Y-%m-%d").strftime("%d-%m-%Y")
+                    date_in_affichage_fr = datetime.strptime(date_in, "%Y-%m-%d").strftime("%d-%m-%Y")
+                    
+                    # Construction de l'URL avec les dates au format international pour les liens
+                    url = f"https://www.ryanair.com/fr/fr/cheap-flights-beta?originIata={entry_lieu_depart.get()}&destinationIata=ANY&isReturn=true&isMacDestination=false&promoCode=&adults=1&teens=0&children=0&infants=0&dateOut={date_out}&dateIn={date_in}&daysTrip={duree}&dayOfWeek=TUESDAY&isExactDate=true&outboundFromHour=00:00&outboundToHour=23:59&inboundFromHour=00:00&inboundToHour=23:59&priceValueTo={entry_prix_max.get()}&currency=EUR&isFlexibleDay=false"
+                    
+                    # Insère le nom du pays (qui sera cliquable)
+                    text_resultats.insert(tk.END, pays)
+                    
+                    # Ajoute le tag de lien uniquement au nom du pays
+                    tag_name = f"link_{pays.replace(' ', '_')}_{date_out.replace('-', '_')}"
+                    text_resultats.tag_add(tag_name, "end-1c linestart", "end-1c")
+                    text_resultats.tag_config(tag_name, foreground="blue", underline=1)
+                    text_resultats.tag_bind(tag_name, "<Button-1>", ouvrir_lien(url))
 
-                # Construction de l'URL spécifique pour chaque pays
-                url = f"https://www.ryanair.com/fr/fr/cheap-flights-beta?originIata={entry_lieu_depart.get()}&destinationIata=ANY&isReturn=true&isMacDestination=false&promoCode=&adults=1&teens=0&children=0&infants=0&dateOut={date_out}&dateIn={date_in}&daysTrip={duree}&dayOfWeek=TUESDAY&isExactDate=true&outboundFromHour=00:00&outboundToHour=23:59&inboundFromHour=00:00&inboundToHour=23:59&priceValueTo={entry_prix_max.get()}&currency=EUR&isFlexibleDay=false"
-                
-                # Insérer le nom du pays avec un lien cliquable
-                text_resultats.insert(tk.END, f"{pays}")
-                # Ajouter un tag unique pour chaque pays pour le lien
-                tag_name = f"link_{pays.replace(' ', '_')}_{date_out.replace('-', '_')}"
-                text_resultats.tag_add(tag_name, "end-1c linestart", "end-1c")
-                text_resultats.tag_config(tag_name, foreground="blue", underline=1)
-                text_resultats.tag_bind(tag_name, "<Button-1>", lambda e, url=url: ouvrir_lien(url))
-                text_resultats.insert(tk.END, f" : {infos['details']}\n")
-            text_resultats.insert(tk.END, "-"*50 + "\n")
+                    # Continue d'insérer le reste des détails du vol sans les rendre cliquables
+                    text_resultats.insert(tk.END, f" : {date_out_affichage_fr} - {date_in_affichage_fr} | {prix_vol}\n")
+                    
+                    # Insère le texte dans la zone de texte avec les dates au format français et le prix
+                    # text_resultats.insert(tk.END, f"{pays} : {date_out_affichage_fr} - {date_in_affichage_fr} | {prix_vol}\n")
+                                        
+                    # Ajouter un tag unique pour chaque pays pour le lien
+                    # tag_name = f"link_{pays.replace(' ', '_')}_{date_out.replace('-', '_')}"
+                    # text_resultats.tag_add(tag_name, "end-2l linestart", "end-1l lineend")
+                    # text_resultats.tag_config(tag_name, foreground="blue", underline=1)
+                    # text_resultats.tag_bind(tag_name, "<Button-1>", ouvrir_lien(url))                
+                    
+                text_resultats.insert(tk.END, "-"*50 + "\n")
+
             
         # Insérez le texte explicatif ici
         texte_explicatif = "\nCliquez sur les noms des pays pour voir les offres\ndétaillées par ville sur le site de Ryanair."
