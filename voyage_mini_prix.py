@@ -210,20 +210,13 @@ def effectuer_recherche_vols_selenium(date_debut_str, date_fin_str, lieu_depart,
                 print("Recherche arrêtée par l'utilisateur.")
                 driver.quit()
                 return None
-            # date_out = date_actuelle.strftime("%Y-%m-%d")
-            # date_in = (date_actuelle + timedelta(days=duree_sejour)).strftime("%Y-%m-%d")
-            # Conversion des dates au format souhaité
-            date_out = date_actuelle.strftime("%d-%m-%Y")
-            date_in = (date_actuelle + timedelta(days=duree_sejour)).strftime("%d-%m-%Y")
-            # Conversion des dates pour l'affichage
-            # date_out_display = date_actuelle.strftime("%d-%m-%Y")
-            # date_in_display = (date_actuelle + timedelta(days=duree_sejour)).strftime("%d-%m-%Y")
-
+            date_out_affichage = date_actuelle.strftime("%d-%m-%Y")
+            date_in_affichage = (date_actuelle + timedelta(days=duree_sejour)).strftime("%d-%m-%Y")
             # Gardez le format original pour les URLs
-            date_out_url = date_actuelle.strftime("%Y-%m-%d")
-            date_in_url = (date_actuelle + timedelta(days=duree_sejour)).strftime("%Y-%m-%d")
+            date_out = date_actuelle.strftime("%Y-%m-%d")
+            date_in = (date_actuelle + timedelta(days=duree_sejour)).strftime("%Y-%m-%d")
 
-            url = f"https://www.ryanair.com/fr/fr/cheap-flights-beta?originIata={lieu_depart}&destinationIata=ANY&isReturn=true&isMacDestination=false&promoCode=&adults=1&teens=0&children=0&infants=0&dateOut={date_out_url}&dateIn={date_in_url}&daysTrip={duree_sejour}&dayOfWeek=TUESDAY&isExactDate=true&outboundFromHour=00:00&outboundToHour=23:59&inboundFromHour=00:00&inboundToHour=23:59&priceValueTo={prix_max}&currency=EUR&isFlexibleDay=false"
+            url = f"https://www.ryanair.com/fr/fr/cheap-flights-beta?originIata={lieu_depart}&destinationIata=ANY&isReturn=true&isMacDestination=false&promoCode=&adults=1&teens=0&children=0&infants=0&dateOut={date_out}&dateIn={date_in}&daysTrip={duree_sejour}&dayOfWeek=TUESDAY&isExactDate=true&outboundFromHour=00:00&outboundToHour=23:59&inboundFromHour=00:00&inboundToHour=23:59&priceValueTo={prix_max}&currency=EUR&isFlexibleDay=false"
             
             driver.get(url)
             try:
@@ -356,7 +349,7 @@ def afficher_resultats(resultats_par_duree):
                 date_out, date_in = infos['details'].split(" | ")[0].split(" - ")
 
                 # Construction de l'URL spécifique pour chaque pays
-                url = f"https://www.ryanair.com/fr/fr/cheap-flights-beta?originIata={entry_lieu_depart.get()}&destinationIata=ANY&isReturn=true&isMacDestination=false&promoCode=&adults=1&teens=0&children=0&infants=0&dateOut={date_out_url}&dateIn={date_in_url}&daysTrip={duree}&dayOfWeek=TUESDAY&isExactDate=true&outboundFromHour=00:00&outboundToHour=23:59&inboundFromHour=00:00&inboundToHour=23:59&priceValueTo={entry_prix_max.get()}&currency=EUR&isFlexibleDay=false"
+                url = f"https://www.ryanair.com/fr/fr/cheap-flights-beta?originIata={entry_lieu_depart.get()}&destinationIata=ANY&isReturn=true&isMacDestination=false&promoCode=&adults=1&teens=0&children=0&infants=0&dateOut={date_out}&dateIn={date_in}&daysTrip={duree}&dayOfWeek=TUESDAY&isExactDate=true&outboundFromHour=00:00&outboundToHour=23:59&inboundFromHour=00:00&inboundToHour=23:59&priceValueTo={entry_prix_max.get()}&currency=EUR&isFlexibleDay=false"
                 
                 # Insérer le nom du pays avec un lien cliquable
                 text_resultats.insert(tk.END, f"{pays}")
