@@ -123,13 +123,12 @@ driver = webdriver.Firefox(service=service, options=options)
 def effectuer_recherche_vols_selenium(driver, date_debut_str, date_fin_str, lieu_depart, durees_sejour, prix_max):
     global recherche_active
     date_debut = datetime.strptime(date_debut_str, "%d-%m-%Y")
-    duree_max_sejour = max([int(duree.strip()) for duree in durees_sejour.split(',')])
+    duree_max_sejour = max(durees_sejour)
     date_fin = datetime.strptime(date_fin_str, "%d-%m-%Y") + timedelta(days=duree_max_sejour)
 
     meilleures_offres_par_duree = {}
 
-    for duree_sejour_str in durees_sejour.split(','):
-        duree_sejour = int(duree_sejour_str.strip())
+    for duree_sejour in durees_sejour:  # Utilisez directement les entiers de la liste
         meilleures_offres = {}
         date_actuelle = date_debut
 
@@ -239,9 +238,9 @@ def rechercher_vols():
         date_debut_str = entry_date_debut.get()
         date_fin_str = entry_date_fin.get()
         lieu_depart = entry_lieu_depart.get()
-        durees_sejour = entry_duree_sejour.get()  # Maintenant, plusieurs durées possibles
-        # durees_sejour_str = entry_duree_sejour.get()  # Récupère la chaîne
-        # durees_sejour = [int(d.strip()) for d in durees_sejour_str.split(',')]  # Convertit en liste d'entiers
+        # durees_sejour = entry_duree_sejour.get()  # Maintenant, plusieurs durées possibles
+        durees_sejour_str = entry_duree_sejour.get()  # Récupère la chaîne
+        durees_sejour = [int(d.strip()) for d in durees_sejour_str.split(',')]  # Convertit en liste d'entiers
         prix_max = float(entry_prix_max.get())
 
         resultats_par_duree = effectuer_recherche_vols_selenium(driver, date_debut_str, date_fin_str, lieu_depart, durees_sejour, prix_max)
@@ -491,9 +490,13 @@ btn_date_fin = tk.Button(window, text="📅", command=choisir_date_fin)
 combo_aeroports = ttk.Combobox(window, values=[f"{code} {nom}" for code, nom in aeroports], state="readonly")
 combo_aeroports.bind("<<ComboboxSelected>>", choisir_aeroport)
 
-# Positionnement des boutons de calendrier plus proche des Entry
-btn_date_debut.grid(row=2, column=1, padx=(0, 135), pady=5, sticky="e")  
-btn_date_fin.grid(row=3, column=1, padx=(0, 135), pady=5, sticky="e")    
+# Remplacez ces lignes
+# btn_date_debut.grid(row=2, column=1, padx=(0, 135), pady=5, sticky="e")  
+# btn_date_fin.grid(row=3, column=1, padx=(0, 135), pady=5, sticky="e")
+
+# Avec ces lignes pour les retirer de la grille
+btn_date_debut.grid_remove()  
+btn_date_fin.grid_remove()  
 combo_aeroports.grid(row=4, column=1, padx=(0, 15), pady=5, sticky="e") 
 
 # Positionnement des widgets
