@@ -146,7 +146,7 @@ def effectuer_recherche_vols_selenium(driver, date_debut_str, date_fin_str, lieu
             
             driver.get(url)
             try:
-                WebDriverWait(driver, 1).until(EC.presence_of_element_located((By.CSS_SELECTOR, "div.country-card__content")))
+                WebDriverWait(driver, 2).until(EC.presence_of_element_located((By.CSS_SELECTOR, "div.country-card__content")))
                 content = driver.page_source
                 soup = BeautifulSoup(content, 'html.parser')
                 cards = soup.select("div.country-card__content")
