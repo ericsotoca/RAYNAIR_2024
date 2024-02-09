@@ -114,13 +114,14 @@ def creer_action_changement_langue(langue):
 
 chemin_logo = chemin_relatif('logo.png')
 
-def effectuer_recherche_vols_selenium(date_debut_str, date_fin_str, lieu_depart, durees_sejour, prix_max):
+# Initialisation du driver en dehors de la fonction effectuer_recherche_vols_selenium
+options = webdriver.FirefoxOptions()
+options.add_argument("--headless")
+service = FirefoxService(GeckoDriverManager().install())
+driver = webdriver.Firefox(service=service, options=options)
+
+def effectuer_recherche_vols_selenium(driver, date_debut_str, date_fin_str, lieu_depart, durees_sejour, prix_max):
     global recherche_active
-    options = webdriver.FirefoxOptions()
-    options.add_argument("--headless")
-    service = FirefoxService(GeckoDriverManager().install())
-    driver = webdriver.Firefox(service=service, options=options)
-    
     date_debut = datetime.strptime(date_debut_str, "%d-%m-%Y")
     duree_max_sejour = max([int(duree.strip()) for duree in durees_sejour.split(',')])
     date_fin = datetime.strptime(date_fin_str, "%d-%m-%Y") + timedelta(days=duree_max_sejour)
@@ -131,14 +132,14 @@ def effectuer_recherche_vols_selenium(date_debut_str, date_fin_str, lieu_depart,
         duree_sejour = int(duree_sejour_str.strip())
         meilleures_offres = {}
         date_actuelle = date_debut
+
         while date_actuelle + timedelta(days=duree_sejour) <= date_fin:
             if not recherche_active:
                 print("Recherche arrêtée par l'utilisateur.")
-                driver.quit()
                 return None
+
             date_out_affichage = date_actuelle.strftime("%d-%m-%Y")
             date_in_affichage = (date_actuelle + timedelta(days=duree_sejour)).strftime("%d-%m-%Y")
-            # Gardez le format original pour les URLs
             date_out = date_actuelle.strftime("%Y-%m-%d")
             date_in = (date_actuelle + timedelta(days=duree_sejour)).strftime("%Y-%m-%d")
 
@@ -146,14 +147,13 @@ def effectuer_recherche_vols_selenium(date_debut_str, date_fin_str, lieu_depart,
             
             driver.get(url)
             try:
-                WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "div.country-card__content")))
+                WebDriverWait(driver, 1).until(EC.presence_of_element_located((By.CSS_SELECTOR, "div.country-card__content")))
                 content = driver.page_source
                 soup = BeautifulSoup(content, 'html.parser')
                 cards = soup.select("div.country-card__content")
                 for card in cards:
                     original_text = card.text.strip()
                     cleaned_text = re.sub(r"\s+", " ", original_text).strip()
-
                     match = re.search(r"(\w+)\s.*€(\d+[\.,]?\d*)", cleaned_text)
                     if match:
                         pays = match.group(1)
@@ -166,19 +166,20 @@ def effectuer_recherche_vols_selenium(date_debut_str, date_fin_str, lieu_depart,
                             pays = "Royaume-Uni"
                         if pays == "République":
                             pays = "République tchèque"
-                         
+
                         if pays not in meilleures_offres or meilleures_offres[pays]["prix"] > prix:
                             meilleures_offres[pays] = {"prix": prix, "details": details_vol}
-        
             except TimeoutException:
-                print("TimeoutException pour la date de départ:", date_out)
+                print(f"TimeoutException pour la date de départ: {date_out_affichage}")
 
             date_actuelle += timedelta(days=1)
 
         meilleures_offres_par_duree[duree_sejour] = sorted(meilleures_offres.items(), key=lambda offre: offre[1]['prix'])
 
-    driver.quit()
     return meilleures_offres_par_duree
+
+# Définissez recherche_active sur True pour éviter une sortie anticipée de la fonction
+    recherche_active = True
 
 def ouvrir_lien(url):
     def callback(e):
@@ -239,13 +240,16 @@ def rechercher_vols():
         date_fin_str = entry_date_fin.get()
         lieu_depart = entry_lieu_depart.get()
         durees_sejour = entry_duree_sejour.get()  # Maintenant, plusieurs durées possibles
+        # durees_sejour_str = entry_duree_sejour.get()  # Récupère la chaîne
+        # durees_sejour = [int(d.strip()) for d in durees_sejour_str.split(',')]  # Convertit en liste d'entiers
         prix_max = float(entry_prix_max.get())
 
-        resultats_par_duree = effectuer_recherche_vols_selenium(date_debut_str, date_fin_str, lieu_depart, durees_sejour, prix_max)
+        resultats_par_duree = effectuer_recherche_vols_selenium(driver, date_debut_str, date_fin_str, lieu_depart, durees_sejour, prix_max)
+        # resultats_par_duree = effectuer_recherche_vols_selenium(date_debut_str, date_fin_str, lieu_depart, durees_sejour, prix_max)
         print(f"Résultats obtenus: {resultats_par_duree}")  # Débogage
         window.after(0, afficher_resultats, resultats_par_duree)
     except Exception as e:
-        window.after(0, lambda: messagebox.showerror("Erreur", f"Une erreur est survenue lors de la recherche : {e}"))
+        window.after(0, lambda e=e: messagebox.showerror("Erreur", f"Une erreur est survenue lors de la recherche : {e}"))
         print(f"Erreur lors de la recherche: {e}")  # Débogage
     finally:
         recherche_active = False
