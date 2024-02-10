@@ -276,7 +276,7 @@ def rechercher_vols():
         lieu_depart = entry_lieu_depart.get()
         # durees_sejour = entry_duree_sejour.get()  # Maintenant, plusieurs durées possibles
         durees_sejour_str = entry_duree_sejour.get()  # Récupère la chaîne
-        durees_sejour = [int(d.strip()) for d in durees_sejour_str.split(',')]  # Convertit en liste d'entiers
+        durees_sejour = [int(d.strip()) for d in durees_sejour_str.split('/')]  # Convertit en liste d'entiers
         prix_max = float(entry_prix_max.get())
 
         resultats_par_duree = effectuer_recherche_vols_selenium(driver, date_debut_str, date_fin_str, lieu_depart, durees_sejour, prix_max)
@@ -482,10 +482,10 @@ label_prix_max = Label(window, text="Prix max en €")
 
 # Réglage - Création et initialisation des champs de saisie avec valeurs par défaut
 date_demain = datetime.now() + timedelta(days=1)
-date_debut_defaut = (date_demain + timedelta(days=25)).strftime("%d-%m-%Y")
-date_fin_defaut = (date_demain + timedelta(days=50)).strftime("%d-%m-%Y")
+date_debut_defaut = (date_demain + timedelta(days=30)).strftime("%d-%m-%Y")
+date_fin_defaut = (date_demain + timedelta(days=60)).strftime("%d-%m-%Y")
 lieu_depart_defaut = "MRS"
-duree_sejour_defaut = "4,5"
+duree_sejour_defaut = "4"
 prix_max_defaut = "100"
 
 # Création et positionnement des Entry et Button
