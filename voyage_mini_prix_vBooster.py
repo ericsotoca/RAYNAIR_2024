@@ -480,13 +480,13 @@ label_lieu_depart = Label(window, text="Aéroport de départ")
 label_duree_sejour = Label(window, text="Durée du séjour")
 label_prix_max = Label(window, text="Prix max en €")
 
-# Création et initialisation des champs de saisie avec valeurs par défaut
+# Réglage - Création et initialisation des champs de saisie avec valeurs par défaut
 date_demain = datetime.now() + timedelta(days=1)
-date_debut_defaut = (date_demain + timedelta(days=30)).strftime("%d-%m-%Y")
-date_fin_defaut = (date_demain + timedelta(days=60)).strftime("%d-%m-%Y")
+date_debut_defaut = (date_demain + timedelta(days=25)).strftime("%d-%m-%Y")
+date_fin_defaut = (date_demain + timedelta(days=50)).strftime("%d-%m-%Y")
 lieu_depart_defaut = "MRS"
-duree_sejour_defaut = "5"
-prix_max_defaut = "500"
+duree_sejour_defaut = "4,5"
+prix_max_defaut = "100"
 
 # Création et positionnement des Entry et Button
 entry_date_debut = Entry(window, width=largeur_champs)
