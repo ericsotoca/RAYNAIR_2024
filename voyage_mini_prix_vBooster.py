@@ -15,7 +15,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.service import Service as FirefoxService
 from webdriver_manager.firefox import GeckoDriverManager
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
 from selenium.common.exceptions import TimeoutException
@@ -42,17 +41,17 @@ def update_progress():
     global recherche_active 
     if recherche_active:
         # Mise à jour plus lente pour simuler une longue opération
-        new_value = progress['value'] + (100 / (15 * 60 / 0.5))  # Exemple: complète la barre en 15 minutes
+        new_value = progress['value'] + (100 / (15 * 60 / 0.5)) 
         if new_value < progress['maximum']:
             progress['value'] = new_value
-            window.after(500, update_progress)  # Mettez à jour toutes les 0.5 secondes
+            window.after(500, update_progress)
         else:
             progress['value'] = progress['maximum']
-            recherche_active = False  # Assurez-vous d'arrêter la progression lorsque terminé
+            recherche_active = False
             btn_rechercher.config(state='normal')
             messagebox.showinfo("Recherche terminée", "La recherche est terminée.")
     else:
-        progress['value'] = 0  # Réinitialisez la barre si la recherche est arrêtée
+        progress['value'] = 0 
         btn_rechercher.config(state='normal')
 
 # Modification pour le chemin des images dans un contexte exécutable
@@ -70,6 +69,7 @@ def chemin_relatif(fichier):
 
 # Dictionnaire des traductions (en cours)
 traductions = {
+
     'france': {
         'titre': "Voyage_Mini_Prix",
 
@@ -120,6 +120,31 @@ options.add_argument("--headless")
 service = FirefoxService(GeckoDriverManager().install())
 driver = webdriver.Firefox(service=service, options=options)
 
+def attendre_resultats_ou_absence(driver, results_selector="div.country-card__content", no_results_selector="ffr-no-results.ng-star-inserted, span.no-flights_primary-title", timeout=10):
+    try:
+        # Attend que l'un des éléments soit visible
+        WebDriverWait(driver, timeout).until(
+            lambda driver: driver.find_elements(By.CSS_SELECTOR, results_selector) or driver.find_elements(By.CSS_SELECTOR, no_results_selector)
+        )
+        # Vérifie quel élément est présent
+        if driver.find_elements(By.CSS_SELECTOR, results_selector):
+            return "results"
+        elif driver.find_elements(By.CSS_SELECTOR, no_results_selector):
+            return "no_results"
+    except TimeoutException:
+        return "timeout"
+
+# Utilisation de la fonction
+status = attendre_resultats_ou_absence(driver)
+if status == "results":
+    print("Des résultats sont disponibles.")
+elif status == "no_results":
+    print("Aucun résultat correspondant à la recherche.")
+else:
+    print("Le chargement de la page a dépassé le temps d'attente.")
+
+
+
 def effectuer_recherche_vols_selenium(driver, date_debut_str, date_fin_str, lieu_depart, durees_sejour, prix_max):
     global recherche_active
     date_debut = datetime.strptime(date_debut_str, "%d-%m-%Y")
@@ -146,7 +171,18 @@ def effectuer_recherche_vols_selenium(driver, date_debut_str, date_fin_str, lieu
             
             driver.get(url)
             try:
-                WebDriverWait(driver, 2).until(EC.presence_of_element_located((By.CSS_SELECTOR, "div.country-card__content")))
+                # WebDriverWait(driver, 3).until(EC.presence_of_element_located((By.CSS_SELECTOR, "div.country-card__content")))
+
+                status = attendre_resultats_ou_absence(driver)
+                if status == "no_results":
+                    print("Aucun résultat pour cette recherche.")
+                    continue  # Passe à la prochaine itération de la boucle de recherche
+                elif status == "timeout":
+                    print("Le chargement de la page a dépassé le temps d'attente.")
+                    continue  # Optionnel : gérer le timeout selon tes besoins
+                # Traite les résultats si status == "results"
+
+                
                 content = driver.page_source
                 soup = BeautifulSoup(content, 'html.parser')
                 cards = soup.select("div.country-card__content")
@@ -446,11 +482,11 @@ label_prix_max = Label(window, text="Prix max en €")
 
 # Création et initialisation des champs de saisie avec valeurs par défaut
 date_demain = datetime.now() + timedelta(days=1)
-date_debut_defaut = date_demain.strftime("%d-%m-%Y")
-date_fin_defaut = (date_demain + timedelta(days=90)).strftime("%d-%m-%Y")
+date_debut_defaut = (date_demain + timedelta(days=30)).strftime("%d-%m-%Y")
+date_fin_defaut = (date_demain + timedelta(days=60)).strftime("%d-%m-%Y")
 lieu_depart_defaut = "MRS"
 duree_sejour_defaut = "5"
-prix_max_defaut = "50"
+prix_max_defaut = "500"
 
 # Création et positionnement des Entry et Button
 entry_date_debut = Entry(window, width=largeur_champs)
