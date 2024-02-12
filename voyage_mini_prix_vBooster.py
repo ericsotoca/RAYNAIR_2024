@@ -19,6 +19,8 @@ from bs4 import BeautifulSoup
 import logging
 from selenium.common.exceptions import TimeoutException, WebDriverException
 
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
 # Configuration de la fenêtre principale de l'application
 window = tk.Tk()
 window.title("Voyage_Mini_Prix")
@@ -214,10 +216,9 @@ elif status == "no_results":
 else:
     print("Le chargement de la page a dépassé le temps d'attente.")
 
-
-
 def effectuer_recherche_vols_selenium(driver, date_debut_str, date_fin_str, lieu_depart, durees_sejour, prix_max):
     global recherche_active
+    recherche_active = True # pour clignoter
     logging.info("Début de la recherche des vols avec Selenium")
     date_debut = datetime.strptime(date_debut_str, "%d-%m-%Y")
     duree_max_sejour = max(durees_sejour)
@@ -228,7 +229,7 @@ def effectuer_recherche_vols_selenium(driver, date_debut_str, date_fin_str, lieu
     for duree_sejour in durees_sejour:  # Utilisez directement les entiers de la liste
         meilleures_offres = {}
         date_actuelle = date_debut
-
+        
         while date_actuelle + timedelta(days=duree_sejour) <= date_fin:
             if not recherche_active:
                 logging.info("Recherche interrompue par l'utilisateur.")
@@ -241,6 +242,7 @@ def effectuer_recherche_vols_selenium(driver, date_debut_str, date_fin_str, lieu
             date_in_affichage = (date_actuelle + timedelta(days=duree_sejour)).strftime("%d-%m-%Y")
             date_out = date_actuelle.strftime("%Y-%m-%d")
             date_in = (date_actuelle + timedelta(days=duree_sejour)).strftime("%Y-%m-%d")
+
             logging.info(f"Recherche des vols du {date_out} au {date_in}")
 
             url = f"https://www.ryanair.com/fr/fr/cheap-flights-beta?originIata={lieu_depart}&destinationIata=ANY&isReturn=true&isMacDestination=false&promoCode=&adults=1&teens=0&children=0&infants=0&dateOut={date_out}&dateIn={date_in}&daysTrip={duree_sejour}&dayOfWeek=TUESDAY&isExactDate=true&outboundFromHour=00:00&outboundToHour=23:59&inboundFromHour=00:00&inboundToHour=23:59&priceValueTo={prix_max}&currency=EUR&isFlexibleDay=false"
@@ -257,7 +259,6 @@ def effectuer_recherche_vols_selenium(driver, date_debut_str, date_fin_str, lieu
                     print("Le chargement de la page a dépassé le temps d'attente.")
                     continue  # Optionnel : gérer le timeout selon tes besoins
                 # Traite les résultats si status == "results"
-
                 
                 content = driver.page_source
                 soup = BeautifulSoup(content, 'html.parser')
@@ -270,6 +271,7 @@ def effectuer_recherche_vols_selenium(driver, date_debut_str, date_fin_str, lieu
                         pays = match.group(1)
                         prix = float(match.group(2).replace(',', '.'))
                         details_vol = f"{date_out} - {date_in} | Prix: €{prix}"
+                        logging.info(f"Trouvé : {pays}, {details_vol}")
 
                         if pays in ["Bas", "Uni", "République"]:
                             pays = {"Bas": "Pays-Bas", "Uni": "Royaume-Uni", "République": "République tchèque"}.get(pays, pays)
@@ -277,18 +279,29 @@ def effectuer_recherche_vols_selenium(driver, date_debut_str, date_fin_str, lieu
                         if pays not in meilleures_offres or meilleures_offres[pays]["prix"] > prix:
                             meilleures_offres[pays] = {"prix": prix, "details": details_vol}
             except TimeoutException:
-                print(f"TimeoutException pour la date de départ: {date_out_affichage}")
+                print(f"TimeoutException pour la date de départ: {date_out}")
 
             date_actuelle += timedelta(days=1)
 
-        meilleures_offres_par_duree[duree_sejour] = sorted(meilleures_offres.items(), key=lambda offre: offre[1]['prix'])
-
+        if meilleures_offres:
+            meilleures_offres_par_duree[duree_sejour] = sorted(meilleures_offres.items(), key=lambda offre: offre[1]['prix'])
+ 
     logging.info("Fin de la recherche des vols avec Selenium")
-    logging.info(f"Résultats finaux Selenium : {meilleures_offres_par_duree}")
+    if meilleures_offres_par_duree:
+        logging.info(f"Résultats finaux Selenium : {meilleures_offres_par_duree}")
+        print("Résultats finaux des recherches :")
+        for duree, offres in meilleures_offres_par_duree.items():
+            print(f"\nPour une durée de séjour de {duree} jours:")
+            for pays, infos in offres:
+                print(f"{pays}: {infos['details']}")
+    else:
+        print("Aucun résultat trouvé pour les critères de recherche donnés.")
+    
     return meilleures_offres_par_duree
 
 # Définissez recherche_active sur True pour éviter une sortie anticipée de la fonction
-    recherche_active = True
+#    recherche_active = True
+    
 
 def ouvrir_lien(url):
     def callback(e):
