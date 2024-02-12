@@ -40,21 +40,23 @@ def start_progress():
 
 # Ajustez votre fonction update_progress pour tenir compte de recherche_active
 def update_progress():
-    global recherche_active 
-    if recherche_active:
-        # Mise à jour plus lente pour simuler une longue opération
-        new_value = progress['value'] + (100 / (15 * 60 / 0.5)) 
-        if new_value < progress['maximum']:
-            progress['value'] = new_value
-            window.after(500, update_progress)
-        else:
-            progress['value'] = progress['maximum']
-            recherche_active = False
-            btn_rechercher.config(state='normal')
-            messagebox.showinfo("Recherche terminée", "La recherche est terminée.")
+    # Mise à jour plus lente pour simuler une longue opération
+    new_value = progress['value'] + (100 / (30 * 60 / 0.5))
+    if new_value < progress['maximum']:
+        progress['value'] = new_value
+        window.after(500, update_progress)
     else:
-        progress['value'] = 0 
+        progress['value'] = progress['maximum']
+        # Ne pas réinitialiser recherche_active ici
         btn_rechercher.config(state='normal')
+
+def arreter_recherche():
+    global recherche_active
+    recherche_active = False
+    progress['value'] = 0
+    btn_rechercher.config(state='normal')
+    messagebox.showinfo("Recherche terminée", "La recherche a été arrêtée.")
+
 
 # Modification pour le chemin des images dans un contexte exécutable
 def chemin_relatif(fichier):
@@ -231,10 +233,10 @@ def effectuer_recherche_vols_selenium(driver, date_debut_str, date_fin_str, lieu
         date_actuelle = date_debut
         
         while date_actuelle + timedelta(days=duree_sejour) <= date_fin:
-            if not recherche_active:
-                logging.info("Recherche interrompue par l'utilisateur.")
-                print("Recherche arrêtée par l'utilisateur.")
-                return None
+            # if not recherche_active:
+            #    logging.info("Recherche interrompue par l'utilisateur.")
+            #    print("Recherche arrêtée par l'utilisateur.")
+            #    return None
             
             logging.info(f"Recherche pour des séjours de {duree_sejour} jours")
 
@@ -568,11 +570,11 @@ label_prix_max = Label(window, text="Prix max en €")
 
 # Réglage - Création et initialisation des champs de saisie avec valeurs par défaut
 date_demain = datetime.now() + timedelta(days=1)
-date_debut_defaut = (date_demain + timedelta(days=30)).strftime("%d-%m-%Y")
-date_fin_defaut = (date_demain + timedelta(days=60)).strftime("%d-%m-%Y")
+date_debut_defaut = (date_demain + timedelta(days=2)).strftime("%d-%m-%Y")
+date_fin_defaut = (date_demain + timedelta(days=90)).strftime("%d-%m-%Y")
 lieu_depart_defaut = "MRS"
 duree_sejour_defaut = "4"
-prix_max_defaut = "100"
+prix_max_defaut = "50"
 
 # Création et positionnement des Entry et Button
 entry_date_debut = Entry(window, width=largeur_champs)
