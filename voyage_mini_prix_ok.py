@@ -1,3 +1,4 @@
+from tkinter import messagebox
 import tkinter as tk
 from tkinter import scrolledtext, Label, Entry, Button, messagebox
 from tkinter import font
@@ -11,6 +12,7 @@ import winsound
 import webbrowser
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.firefox.service import Service as FirefoxService
 from webdriver_manager.firefox import GeckoDriverManager
 from selenium.webdriver.support.ui import WebDriverWait
@@ -19,57 +21,190 @@ from bs4 import BeautifulSoup
 import logging
 from selenium.common.exceptions import TimeoutException, WebDriverException
 
+# Configure le journalisation pour écrire dans un fichier avec le niveau de détails DEBUG
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+# Exemple de comment loguer des informations
+logging.info('Démarrage de l\'application')
+
+options = webdriver.FirefoxOptions()
+options.add_argument("--headless")
+service = FirefoxService(GeckoDriverManager().install())
+driver = webdriver.Firefox(service=service, options=options)
 
 # Configuration de la fenêtre principale de l'application
 window = tk.Tk()
 window.title("Voyage_Mini_Prix")
-window.geometry('1000x500')  # Ajuste la taille de la fenêtre selon tes besoins
+window.geometry('1000x750')  # Ajuste la taille de la fenêtre selon tes besoins
 window.configure(bg='lightblue')
 
-# Variable globale pour contrôler le clignotement
-clignotement_en_cours = False
-
-# Variable globale pour contrôler l'état de la recherche
-recherche_active = False
-
-# Fonction pour démarrer la mise à jour de la barre de progression
-def start_progress():
-    progress["value"] = 0  # Réinitialisez la valeur de départ
-    window.after(100, update_progress)
-
-# Ajustez votre fonction update_progress pour tenir compte de recherche_active
-def update_progress():
-    # Mise à jour plus lente pour simuler une longue opération
-    new_value = progress['value'] + (100 / (30 * 60 / 0.5))
-    if new_value < progress['maximum']:
-        progress['value'] = new_value
-        window.after(500, update_progress)
-    else:
-        progress['value'] = progress['maximum']
-        # Ne pas réinitialiser recherche_active ici
-        btn_rechercher.config(state='normal')
-
-def arreter_recherche():
-    global recherche_active
-    recherche_active = False
-    progress['value'] = 0
-    btn_rechercher.config(state='normal')
-    messagebox.showinfo("Recherche terminée", "La recherche a été arrêtée.")
-
-
-# Modification pour le chemin des images dans un contexte exécutable
 def chemin_relatif(fichier):
     if getattr(sys, 'frozen', False):
         dossier_application = sys._MEIPASS
     else:
         dossier_application = os.path.dirname(os.path.abspath(__file__))
     chemin_complet = os.path.join(dossier_application, fichier)
-
-    # Ajoute un débogage pour voir si le chemin est correct
-    print(f"Chemin d'accès à la ressource: {chemin_complet}")
-
     return chemin_complet
+
+# Fonction pour jouer un effet sonore de fin de processus
+def jouer_son_fin_processus():
+    # Joue le son "bip-bip" deux fois : Fréquence = 1000 Hz, Durée = 200 ms
+    for _ in range(2):
+        winsound.Beep(1000, 200)
+        winsound.Beep(1000, 200)
+
+def ouvrir_lien(url):
+    def callback(e):
+        webbrowser.open(url, new=2)
+    return callback
+
+def afficher_resultats(resultats_par_duree):
+    global clignotement_en_cours
+    clignotement_en_cours = False  # Arrête le clignotement
+    label_traitement.config(text='')  # Efface le texte
+    text_resultats.delete(1.0, tk.END)
+    print("Affichage des résultats...")  # Débogage
+    if not resultats_par_duree:
+        messagebox.showinfo("Aucune offre", "Aucune offre trouvée pour les critères spécifiés.")
+        print("Aucun résultat à afficher.")  # Débogage
+    else:
+        for duree, offres in resultats_par_duree.items():
+            print(f"Duree: {duree}, Offres: {offres}") 
+            text_resultats.insert(tk.END, f"Voyage de {duree} jours\n\n")
+            
+            # Tri des offres par prix
+            offres_triees_par_prix = sorted(offres.items(), key=lambda x: float(x[1]['details'].split(' | ')[1].split('€')[1]))
+            
+            for pays, infos in offres_triees_par_prix:
+                # Le reste du traitement reste inchangé, seul le tri par prix est ajouté avant cette boucle
+                details_vol = infos['details']
+                date_out, rest = details_vol.split(" - ")
+                date_in, prix_vol = rest.split(" | ")
+                date_out_affichage_fr = datetime.strptime(date_out, "%Y-%m-%d").strftime("%d-%m-%Y")
+                date_in_affichage_fr = datetime.strptime(date_in, "%Y-%m-%d").strftime("%d-%m-%Y")
+                url = f"https://www.ryanair.com/fr/fr/cheap-flights-beta?originIata={entry_lieu_depart.get()}&destinationIata=ANY&isReturn=true&isMacDestination=false&promoCode=&adults=1&teens=0&children=0&infants=0&dateOut={date_out}&dateIn={date_in}&daysTrip={duree}&dayOfWeek=TUESDAY&isExactDate=true&outboundFromHour=00:00&outboundToHour=23:59&inboundFromHour=00:00&inboundToHour=23:59&priceValueTo={entry_prix_max.get()}&currency=EUR&isFlexibleDay=false"
+                text_resultats.insert(tk.END, pays)
+                tag_name = f"link_{pays.replace(' ', '_')}_{date_out.replace('-', '_')}"
+                text_resultats.tag_add(tag_name, "end-1c linestart", "end-1c")
+                text_resultats.tag_config(tag_name, foreground="blue", underline=1)
+                text_resultats.tag_bind(tag_name, "<Button-1>", ouvrir_lien(url))
+                text_resultats.insert(tk.END, f" : {date_out_affichage_fr} - {date_in_affichage_fr} | {prix_vol}\n")
+            text_resultats.insert(tk.END, "-"*50 + "\n")
+        texte_explicatif = "\nCliquez sur les noms des pays pour voir les offres\ndétaillées par ville sur le site de Ryanair."
+        text_resultats.insert(tk.END, texte_explicatif)
+    window.after(2000, label_traitement.pack_forget)
+    btn_rechercher.config(state='normal')
+    jouer_son_fin_processus()
+
+
+def effectuer_recherche_vols_selenium(driver, date_debut_str, date_fin_str, lieu_depart, durees_sejour, prix_max):
+    global recherche_active
+    recherche_active = True  # Assurez-vous de définir cette variable globalement si elle est contrôlée de l'extérieur.
+    logging.info('Recherche active: {}'.format(recherche_active))
+    date_debut = datetime.strptime(date_debut_str, "%d-%m-%Y")
+    date_fin = datetime.strptime(date_fin_str, "%d-%m-%Y")
+    
+    meilleures_offres_par_duree = {}
+    for duree_sejour_str in durees_sejour.split(','):
+        duree_sejour = int(duree_sejour_str.strip())
+        date_actuelle = date_debut
+
+        while date_actuelle + timedelta(days=duree_sejour) <= date_fin:
+            if not recherche_active:
+                print("Recherche arrêtée par l'utilisateur.")
+                return None
+            
+            date_de_fin_sejour = date_actuelle + timedelta(days=duree_sejour)
+            if date_de_fin_sejour > date_fin:  # Assure que la date de fin de séjour ne dépasse pas la plage autorisée.
+                break
+            
+            date_out = date_actuelle.strftime("%Y-%m-%d")
+            date_in = date_de_fin_sejour.strftime("%Y-%m-%d")
+
+            url = f"https://www.ryanair.com/fr/fr/cheap-flights-beta?originIata={lieu_depart}&destinationIata=ANY&isReturn=true&isMacDestination=false&promoCode=&adults=1&teens=0&children=0&infants=0&dateOut={date_out}&dateIn={date_in}&daysTrip={duree_sejour}&dayOfWeek=TUESDAY&isExactDate=true&outboundFromHour=00:00&outboundToHour=23:59&inboundFromHour=00:00&inboundToHour=23:59&priceValueTo={prix_max}&currency=EUR&isFlexibleDay=false"
+            driver.get(url)
+            try:
+                WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "div.country-card__content")))
+                content = driver.page_source
+                soup = BeautifulSoup(content, 'html.parser')
+                cards = soup.select("div.country-card__content")
+                meilleures_offres = {}
+                for card in cards:
+                    try:
+                        # Hypothétique : extraction du nom du pays et du prix à partir de la structure de la carte
+                        pays_text = card.find(class_="country-card__country").get_text(strip=True)
+                        pays_match = re.match(r"^[^\d]*", pays_text)
+                        if pays_match:
+                            pays = pays_match.group(0)  # Utiliser group(0) pour obtenir la chaîne correspondante entière
+                        else:
+                            pays = None  # ou une chaîne vide si vous préférez ''
+
+                        prix_text = card.find(class_="country-card__price").get_text(strip=True)
+                        prix = float(prix_text.strip('€').replace(',', '.'))
+                        details_vol = f"{date_out} - {date_in} | Prix: €{prix}"
+                        
+                        # Stocke ou traite les données extraites ici
+                        if pays not in meilleures_offres or prix < meilleures_offres[pays]['prix']:
+                            meilleures_offres[pays] = {'prix': prix, 'details': details_vol}
+                    except Exception as e:
+                        logging.error(f"Une erreur est survenue lors de la recherche: {e}", exc_info=True)
+                        print(f"Erreur lors de l'extraction des données d'une carte: {e}")
+                        continue
+
+            except TimeoutException:
+                print(f"TimeoutException pour la date de départ: {date_out}")
+            
+            date_actuelle += timedelta(days=1)
+
+            if meilleures_offres:  # Vérifie si des offres ont été trouvées durant l'itération actuelle
+                for pays, offre in meilleures_offres.items():
+                    details_vol = offre['details']
+                    prix = offre['prix']
+                    if duree_sejour not in meilleures_offres_par_duree or prix < meilleures_offres_par_duree[duree_sejour].get(pays, {'prix': float('inf')})['prix']:
+                        # Si l'offre actuelle est meilleure (moins chère) que celle déjà enregistrée, ou si aucune offre n'est enregistrée pour ce pays et cette durée
+                        meilleures_offres_par_duree.setdefault(duree_sejour, {})[pays] = {'prix': prix, 'details': details_vol}
+
+    # Après avoir terminé toutes les itérations et collecté les données, on retourne le dictionnaire contenant les meilleures offres par durée de séjour.
+    return meilleures_offres_par_duree
+
+
+# Activation de la recherche.
+recherche_active = True
+
+def lancer_recherche_vols():
+    global recherche_active, driver
+    recherche_active = True  # Assurez-vous que la recherche est activée
+    logging.info('Lancement de la recherche de vols')
+    
+    # Récupérer les valeurs des champs de saisie
+    date_debut_str = entry_date_debut.get()
+    date_fin_str = entry_date_fin.get()
+    lieu_depart = entry_lieu_depart.get()
+    durees_sejour = entry_duree_sejour.get()  # Assurez-vous que ce champ est formaté correctement, par ex. "3,5,7"
+    prix_max = entry_prix_max.get()
+
+    # Appeler la fonction de recherche avec les paramètres récupérés
+    try:
+        resultats = effectuer_recherche_vols_selenium(driver, date_debut_str, date_fin_str, lieu_depart, durees_sejour, prix_max)
+        afficher_resultats(resultats)  # Afficher les résultats dans le widget ScrolledText
+    except Exception as e:
+        logging.error(f"Une erreur est survenue lors de la recherche: {e}", exc_info=True)
+        messagebox.showerror("Erreur", f"Une erreur est survenue lors de la recherche: {e}")
+    finally:
+        recherche_active = False  # Désactiver la recherche une fois terminée
+
+def reinitialiser_formulaire():
+    # Implémentez la logique pour réinitialiser le formulaire
+    pass
+
+def creer_action_changement_langue(nom_drapeau):
+    def action():
+        print(f"Drapeau cliqué : {nom_drapeau}")
+        # Vous pouvez ajouter ici le code pour changer la langue ou naviguer vers un site web spécifique
+    return action
+
+def creer_action_changement_langue(langue):
+    return lambda: changer_langue(langue)
 
 # Dictionnaire des traductions (en cours)
 traductions = {
@@ -167,6 +302,7 @@ traductions = {
     },
 }
 
+
 # Fonction pour changer la langue
 def changer_langue(langue):
     # Met à jour le titre de la fenêtre
@@ -182,359 +318,11 @@ def changer_langue(langue):
     label_instructions.config(text=traductions[langue]['texte_accueil']) 
     label_contacts.config(text=traductions[langue]['creation_info']) 
     label_traitement.config(text=traductions[langue]['demarrer_processus']) 
+# Définition des polices du texte principal
+police_grande = font.Font(family="Helvetica", size=10) 
+largeur_champs = 20
 
-# Crée une fonction pour générer une action de changement de langue pour éviter les problèmes de portée de la lambda dans la boucle
-def creer_action_changement_langue(langue):
-    return lambda: changer_langue(langue)
-
-chemin_logo = chemin_relatif('logo.png')
-
-# Initialisation du driver en dehors de la fonction effectuer_recherche_vols_selenium
-options = webdriver.FirefoxOptions()
-options.add_argument("--headless")
-service = FirefoxService(GeckoDriverManager().install())
-driver = webdriver.Firefox(service=service, options=options)
-
-def attendre_resultats_ou_absence(driver, results_selector="div.country-card__content", no_results_selector="ffr-no-results.ng-star-inserted, span.no-flights_primary-title", timeout=10):
-    try:
-        # Attend que l'un des éléments soit visible
-        WebDriverWait(driver, timeout).until(
-            lambda driver: driver.find_elements(By.CSS_SELECTOR, results_selector) or driver.find_elements(By.CSS_SELECTOR, no_results_selector)
-        )
-        # Vérifie quel élément est présent
-        if driver.find_elements(By.CSS_SELECTOR, results_selector):
-            return "results"
-        elif driver.find_elements(By.CSS_SELECTOR, no_results_selector):
-            return "no_results"
-    except TimeoutException:
-        return "timeout"
-
-# Utilisation de la fonction
-status = attendre_resultats_ou_absence(driver)
-if status == "results":
-    print("Des résultats sont disponibles.")
-elif status == "no_results":
-    print("Aucun résultat correspondant à la recherche.")
-else:
-    print("Le chargement de la page a dépassé le temps d'attente.")
-
-def effectuer_recherche_vols_selenium(driver, date_debut_str, date_fin_str, lieu_depart, durees_sejour, prix_max):
-    global recherche_active
-    recherche_active = True # pour clignoter
-    logging.info("Début de la recherche des vols avec Selenium")
-    date_debut = datetime.strptime(date_debut_str, "%d-%m-%Y")
-    duree_max_sejour = max(durees_sejour)
-    date_fin = datetime.strptime(date_fin_str, "%d-%m-%Y") + timedelta(days=duree_max_sejour)
-
-    meilleures_offres_par_duree = {}
-
-    for duree_sejour in durees_sejour:  # Utilisez directement les entiers de la liste
-        meilleures_offres = {}
-        date_actuelle = date_debut
-        
-        while date_actuelle + timedelta(days=duree_sejour) <= date_fin:
-            # if not recherche_active:
-            #    logging.info("Recherche interrompue par l'utilisateur.")
-            #    print("Recherche arrêtée par l'utilisateur.")
-            #    return None
-            
-            logging.info(f"Recherche pour des séjours de {duree_sejour} jours")
-
-            date_out_affichage = date_actuelle.strftime("%d-%m-%Y")
-            date_in_affichage = (date_actuelle + timedelta(days=duree_sejour)).strftime("%d-%m-%Y")
-            date_out = date_actuelle.strftime("%Y-%m-%d")
-            date_in = (date_actuelle + timedelta(days=duree_sejour)).strftime("%Y-%m-%d")
-
-            logging.info(f"Recherche des vols du {date_out} au {date_in}")
-
-            url = f"https://www.ryanair.com/fr/fr/cheap-flights-beta?originIata={lieu_depart}&destinationIata=ANY&isReturn=true&isMacDestination=false&promoCode=&adults=1&teens=0&children=0&infants=0&dateOut={date_out}&dateIn={date_in}&daysTrip={duree_sejour}&dayOfWeek=TUESDAY&isExactDate=true&outboundFromHour=00:00&outboundToHour=23:59&inboundFromHour=00:00&inboundToHour=23:59&priceValueTo={prix_max}&currency=EUR&isFlexibleDay=false"
-            
-            driver.get(url)
-            try:
-                # WebDriverWait(driver, 3).until(EC.presence_of_element_located((By.CSS_SELECTOR, "div.country-card__content")))
-
-                status = attendre_resultats_ou_absence(driver)
-                if status == "no_results":
-                    print("Aucun résultat pour cette recherche.")
-                    continue  # Passe à la prochaine itération de la boucle de recherche
-                elif status == "timeout":
-                    print("Le chargement de la page a dépassé le temps d'attente.")
-                    continue  # Optionnel : gérer le timeout selon tes besoins
-                # Traite les résultats si status == "results"
-                
-                content = driver.page_source
-                soup = BeautifulSoup(content, 'html.parser')
-                cards = soup.select("div.country-card__content")
-                for card in cards:
-                    original_text = card.text.strip()
-                    cleaned_text = re.sub(r"\s+", " ", original_text).strip()
-                    match = re.search(r"(\w+)\s.*€(\d+[\.,]?\d*)", cleaned_text)
-                    if match:
-                        pays = match.group(1)
-                        prix = float(match.group(2).replace(',', '.'))
-                        details_vol = f"{date_out} - {date_in} | Prix: €{prix}"
-                        logging.info(f"Trouvé : {pays}, {details_vol}")
-
-                        if pays in ["Bas", "Uni", "République"]:
-                            pays = {"Bas": "Pays-Bas", "Uni": "Royaume-Uni", "République": "République tchèque"}.get(pays, pays)
- 
-                        if pays not in meilleures_offres or meilleures_offres[pays]["prix"] > prix:
-                            meilleures_offres[pays] = {"prix": prix, "details": details_vol}
-            except TimeoutException:
-                print(f"TimeoutException pour la date de départ: {date_out}")
-
-            date_actuelle += timedelta(days=1)
-
-        if meilleures_offres:
-            meilleures_offres_par_duree[duree_sejour] = sorted(meilleures_offres.items(), key=lambda offre: offre[1]['prix'])
- 
-    logging.info("Fin de la recherche des vols avec Selenium")
-    if meilleures_offres_par_duree:
-        logging.info(f"Résultats finaux Selenium : {meilleures_offres_par_duree}")
-        print("Résultats finaux des recherches :")
-        for duree, offres in meilleures_offres_par_duree.items():
-            print(f"\nPour une durée de séjour de {duree} jours:")
-            for pays, infos in offres:
-                print(f"{pays}: {infos['details']}")
-    else:
-        print("Aucun résultat trouvé pour les critères de recherche donnés.")
-    
-    return meilleures_offres_par_duree
-
-# Définissez recherche_active sur True pour éviter une sortie anticipée de la fonction
-#    recherche_active = True
-    
-
-def ouvrir_lien(url):
-    def callback(e):
-        webbrowser.open(url, new=2)
-    return callback
-
-# Obtient le chemin d'accès au dossier actuel où se trouve le script
-dossier_courant = os.path.dirname(__file__)
-chemin_images = dossier_courant 
-
-noms_drapeaux = ['france', 'royaume', 'espagne', 'italie', 'allemagne']
-labels_drapeaux = []
-
-# Crée un Frame pour contenir tous les drapeaux
-frame_drapeaux = tk.Frame(window, bg='lightblue')
-frame_drapeaux.grid(row=8, column=0, columnspan=3, padx=20, pady=2, sticky="w")  # Étendre le Frame sur les colonnes nécessaires
-   
-# Création du Frame pour les drapeaux et chargement des images avec chemin_relatif
-# Utilise la fonction ci-dessus pour définir l'action du bouton
-for index, nom_drapeau in enumerate(noms_drapeaux):
-    chemin_image = chemin_relatif(f"{nom_drapeau}.png")
-    image_drapeau = tk.PhotoImage(file=chemin_image).subsample(2)  # Ajuste la taille des images si nécessaire
-    action_changement_langue = creer_action_changement_langue(nom_drapeau)
-    label_drapeau = tk.Button(frame_drapeaux, image=image_drapeau, bg='lightblue', command=action_changement_langue)
-    label_drapeau.image = image_drapeau
-    label_drapeau.pack(side="left", padx=5)
-       
-def faire_clignoter_label():
-    global clignotement_en_cours
-    if clignotement_en_cours:
-        current_text = label_traitement.cget("text")
-        new_text = "" if current_text else "Recherche en cours..."
-        label_traitement.config(text=new_text)
-        window.after(500, faire_clignoter_label)
-    else:
-        label_traitement.config(text="")  # Assurez-vous que le texte est vide si le clignotement est désactivé
-
-# Fonction appelée lorsque l'utilisateur clique sur le bouton Rechercher
-def lancer_recherche_vols():
-    global recherche_active, clignotement_en_cours
-    if not recherche_active:
-        recherche_active = True
-        clignotement_en_cours = True  # définir cette variable sur True pour commencer le clignotement
-        faire_clignoter_label()  # Commencez le clignotement
-        btn_rechercher.config(state='disabled')
-        progress['value'] = 0
-        start_progress()
-        threading.Thread(target=rechercher_vols, daemon=True).start()
-
-# Fonction pour exécuter la recherche de vols et mettre à jour l'interface avec les résultats
-def rechercher_vols():
-    global recherche_active
-    recherche_active = True
-    start_progress()  # Démarrez la progression ici
-    try:
-        date_debut_str = entry_date_debut.get()
-        date_fin_str = entry_date_fin.get()
-        lieu_depart = entry_lieu_depart.get()
-        # durees_sejour = entry_duree_sejour.get()  # Maintenant, plusieurs durées possibles
-        durees_sejour_str = entry_duree_sejour.get()  # Récupère la chaîne
-        durees_sejour = [int(d.strip()) for d in durees_sejour_str.split('/')]  # Convertit en liste d'entiers
-        prix_max = float(entry_prix_max.get())
-
-        resultats_par_duree = effectuer_recherche_vols_selenium(driver, date_debut_str, date_fin_str, lieu_depart, durees_sejour, prix_max)
-        # resultats_par_duree = effectuer_recherche_vols_selenium(date_debut_str, date_fin_str, lieu_depart, durees_sejour, prix_max)
-        print(f"Résultats obtenus: {resultats_par_duree}")  # Débogage
-        window.after(0, afficher_resultats, resultats_par_duree)
-    except Exception as e:
-        window.after(0, lambda e=e: messagebox.showerror("Erreur", f"Une erreur est survenue lors de la recherche : {e}"))
-        print(f"Erreur lors de la recherche: {e}")  # Débogage
-    finally:
-        recherche_active = False
-        window.after(0, update_progress)  # Assurez-vous de mettre à jour l'interface utilisateur dans le thread principal
-
-# Fonction pour jouer un effet sonore de fin de processus
-def jouer_son_fin_processus():
-    # Joue le son "bip-bip" deux fois : Fréquence = 1000 Hz, Durée = 200 ms
-    for _ in range(2):
-        winsound.Beep(1000, 200)
-        winsound.Beep(1000, 200)
-
-# Modification de la fonction `afficher_resultats` pour que le lien ne couvre que le pays
-def afficher_resultats(resultats_par_duree):
-    global clignotement_en_cours
-    clignotement_en_cours = False  # Arrête le clignotement
-    label_traitement.config(text='')  # Efface le texte
-    text_resultats.delete(1.0, tk.END)
-    print("Affichage des résultats...")  # Débogage
-    if not resultats_par_duree:
-        messagebox.showinfo("Aucune offre", "Aucune offre trouvée pour les critères spécifiés.")
-        print("Aucun résultat à afficher.")  # Débogage
-    else:
-        
-        for duree, offres in resultats_par_duree.items():
-            text_resultats.insert(tk.END, f"Voyage de {duree} jours\n\n")
-            for pays, infos in offres:
-                # Extrais les détails du vol qui incluent les dates au format international et le prix
-                details_vol = infos['details']  # Cette variable devrait contenir "YYYY-MM-DD - YYYY-MM-DD | Prix: €XXX.XX"
-                date_out, rest = details_vol.split(" - ")
-                date_in, prix_vol = rest.split(" | ")
-                
-                # Convertis les dates au format français pour l'affichage
-                # date_out_affichage_fr = datetime.strptime(date_out, "%Y-%m-%d").strftime("%d-%m-%Y")
-                # date_in_affichage_fr = datetime.strptime(date_in, "%Y-%m-%d").strftime("%d-%m-%Y")
-                # Convertis les dates au format français pour l'affichage
-                date_out_affichage_fr = datetime.strptime(date_out, "%Y-%m-%d").strftime("%d/%m")
-                date_in_affichage_fr = datetime.strptime(date_in, "%Y-%m-%d").strftime("%d/%m")
-                
-                # Construction de l'URL avec les dates au format international pour les liens
-                url = f"https://www.ryanair.com/fr/fr/cheap-flights-beta?originIata={entry_lieu_depart.get()}&destinationIata=ANY&isReturn=true&isMacDestination=false&promoCode=&adults=1&teens=0&children=0&infants=0&dateOut={date_out}&dateIn={date_in}&daysTrip={duree}&dayOfWeek=TUESDAY&isExactDate=true&outboundFromHour=00:00&outboundToHour=23:59&inboundFromHour=00:00&inboundToHour=23:59&priceValueTo={entry_prix_max.get()}&currency=EUR&isFlexibleDay=false"
-                
-                # Insère le nom du pays (qui sera cliquable)
-                text_resultats.insert(tk.END, pays)
-                
-                # Ajoute le tag de lien uniquement au nom du pays
-                tag_name = f"link_{pays.replace(' ', '_')}_{date_out.replace('-', '_')}"
-                text_resultats.tag_add(tag_name, "end-1c linestart", "end-1c")
-                text_resultats.tag_config(tag_name, foreground="blue", underline=1)
-                text_resultats.tag_bind(tag_name, "<Button-1>", ouvrir_lien(url))
-
-                # Continue d'insérer le reste des détails du vol sans les rendre cliquables
-                text_resultats.insert(tk.END, f" : {date_out_affichage_fr} - {date_in_affichage_fr} | {prix_vol}\n")
-                
-            text_resultats.insert(tk.END, "-"*50 + "\n")
-            
-        # Insérez le texte explicatif ici
-        texte_explicatif = "\nCliquez sur les noms des pays pour voir les offres\ndétaillées par ville sur le site de Ryanair."
-        text_resultats.insert(tk.END, texte_explicatif)
-    
-    window.after(2000, label_traitement.pack_forget)
-    btn_rechercher.config(state='normal')
-    jouer_son_fin_processus()
-
-# Fonction pour ré-initialiser le formulaire et la zone de texte des résultats
-def reinitialiser_formulaire():
-    global recherche_active, clignotement_en_cours
-    recherche_active = False  # Pour arrêter la recherche
-    clignotement_en_cours = False  # Pour arrêter le clignotement
-    label_traitement.config(text='')  # Efface le texte du label
-
-    entry_date_debut.delete(0, tk.END)
-    entry_date_fin.delete(0, tk.END)
-    entry_lieu_depart.delete(0, tk.END)
-    entry_duree_sejour.delete(0, tk.END)
-    entry_prix_max.delete(0, tk.END)
-    
-    # Réinsérer les valeurs par défaut
-    entry_date_debut.insert(0, date_debut_defaut)
-    entry_date_fin.insert(0, date_fin_defaut)
-    entry_lieu_depart.insert(0, lieu_depart_defaut)
-    entry_duree_sejour.insert(0, duree_sejour_defaut)
-    entry_prix_max.insert(0, prix_max_defaut)    
-    
-    text_resultats.delete(1.0, tk.END)
-    btn_rechercher.config(state='normal')  # Réactive le bouton "Rechercher"
-
-def choisir_date_debut():
-    def set_date_debut():
-        entry_date_debut.delete(0, tk.END)
-        entry_date_debut.insert(0, cal.selection_get().strftime("%d-%m-%Y"))
-        top.destroy()
-
-    top = tk.Toplevel(window)
-    cal = Calendar(top, selectmode='day', year=datetime.now().year, month=datetime.now().month, day=datetime.now().day)
-    cal.pack(fill="both", expand=True)
-    ttk.Button(top, text="ok", command=set_date_debut).pack()
-
-def choisir_date_fin():
-    def set_date_fin():
-        entry_date_fin.delete(0, tk.END)
-        entry_date_fin.insert(0, cal.selection_get().strftime("%d-%m-%Y"))
-        top.destroy()
-
-    top = tk.Toplevel(window)
-    cal = Calendar(top, selectmode='day', year=datetime.now().year, month=datetime.now().month, day=datetime.now().day)
-    cal.pack(fill="both", expand=True)
-    ttk.Button(top, text="ok", command=set_date_fin).pack()
-
-# Fonction pour mettre à jour le champ de saisie du lieu de départ
-def choisir_aeroport(event):
-    code_iata = combo_aeroports.get().split(" ")[0]  # Récupère le code IATA de la sélection
-    entry_lieu_depart.delete(0, tk.END)
-    entry_lieu_depart.insert(0, code_iata)
-
-# Liste des aéroports (code IATA et nom complet)
-aeroports= [
-    ("AAA", "A venir !"),
-]
-
-# Initialisation de style avant son utilisation
-style = ttk.Style(window)
-style.theme_use('default')  # autre thème comme 'clam', 'alt', 'classic', etc.
-
-# Configurez le style de la barre de progression une fois que `style` a été initialisé
-style.configure("green.Horizontal.TProgressbar", troughcolor='white', background='green')
-
-# Créez la barre de progression en utilisant le style configuré
-progress = ttk.Progressbar(window, style="green.Horizontal.TProgressbar", orient="horizontal", mode="determinate", length=200)
-
-# Positionnez la barre de progression dans la grille avec un espace suffisant
-progress.grid(row=8, column=2, padx=10, pady=10, sticky="ew")
-
-# Initialisez la barre de progression avec un maximum et une valeur de départ
-progress["maximum"] = 100
-progress["value"] = 0
-
-# Configuration de la grille
-window.grid_rowconfigure(0, weight=1)
-window.grid_rowconfigure(1, weight=1)
-window.grid_columnconfigure(0, weight=0)
-window.grid_columnconfigure(1, weight=1)
-window.grid_columnconfigure(2, weight=1)
-
-# Initialiser le style TTK et choisir le thème
-style = ttk.Style()
-style.theme_use('clam')  # Remplacez 'clam' par le thème de votre choix
-
-# Définit une largeur pour les champs
-largeur_champs = 20  
-
-# Définis une police de caractères plus grande pour le label d'instructions
-police_grande = font.Font(family="Helvetica", size=10)  # Tu peux ajuster la taille et la famille de police ici
-
-# Création et placement du logo
-logo_image = tk.PhotoImage(file=chemin_logo)
-label_logo = Label(window, image=logo_image, bg='lightblue')
-
-# Définit une police de caractères plus grande pour le label d'instructions
-police_grande = font.Font(family="Helvetica", size=10)  # Tu peux ajuster la taille et la famille de police ici
-
-# Texte d'accueil mis à jour avec des sauts de ligne pour une meilleure présentation
+# Texte d'accueil et label d'instructions
 texte_accueil = (
     "Vous aimeriez partir dans les\n"
     "prochaines semaines, les prochains mois ?\n\n"
@@ -545,124 +333,98 @@ texte_accueil = (
     "Lancez la recherche, un bip final vous\n"
     "avertira, soyez patient quelques minutes !"
 )
-
-# Définis une largeur de wrap adaptée pour que le texte reste dans sa colonne sans l'élargir
-wraplength_desire = 500  # Ajuste cette valeur en pixels selon tes besoins
-
-# Création et placement du label d'instructions avec la nouvelle police et le wraplength ajusté
+wraplength_desire = 500
 label_instructions = tk.Label(
     window,
     text=texte_accueil,
     bg='lightblue',
     font=police_grande,
-    wraplength=wraplength_desire,  # Utilise la largeur de wrap que tu as définie
+    wraplength=wraplength_desire,
     justify="left"
 )
-label_instructions.grid(row=0, column=1, padx=1, pady=1, sticky="nsew")  # Utilise sticky="nsew" pour étendre le label dans toutes les directions
+label_instructions.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
 
-# Création et placement des widgets
-label_traitement = Label(window, text='', bg='lightblue')
-label_date_debut = Label(window, text="Début de la plage de recherche")
-label_date_fin = Label(window, text="Fin de la plage de recherche")
-label_lieu_depart = Label(window, text="Aéroport de départ")
-label_duree_sejour = Label(window, text="Durée du séjour")
-label_prix_max = Label(window, text="Prix max en €")
+# Création et placement du logo
+chemin_logo = chemin_relatif('logo.png')
+logo_image = tk.PhotoImage(file=chemin_logo)
+label_logo = Label(window, image=logo_image, bg='lightblue')
+label_logo.grid(row=0, column=0, padx=10, pady=10, sticky="w")
 
-# Réglage - Création et initialisation des champs de saisie avec valeurs par défaut
-date_demain = datetime.now() + timedelta(days=1)
-date_debut_defaut = (date_demain + timedelta(days=2)).strftime("%d-%m-%Y")
-date_fin_defaut = (date_demain + timedelta(days=90)).strftime("%d-%m-%Y")
-lieu_depart_defaut = "MRS"
-duree_sejour_defaut = "4"
-prix_max_defaut = "50"
+# Configuration des labels pour les champs de saisie
+label_date_debut = Label(window, text="Début de la plage de recherche", bg='lightblue')
+label_date_fin = Label(window, text="Fin de la plage de recherche", bg='lightblue')
+label_lieu_depart = Label(window, text="Aéroport de départ", bg='lightblue')
+label_duree_sejour = Label(window, text="Durée du séjour", bg='lightblue')
+label_prix_max = Label(window, text="Prix max en €", bg='lightblue')
 
-# Création et positionnement des Entry et Button
+# Positionnement des labels
+label_date_debut.grid(row=1, column=0, padx=10, pady=5, sticky="e")
+label_date_fin.grid(row=2, column=0, padx=10, pady=5, sticky="e")
+label_lieu_depart.grid(row=3, column=0, padx=10, pady=5, sticky="e")
+label_duree_sejour.grid(row=4, column=0, padx=10, pady=5, sticky="e")
+label_prix_max.grid(row=5, column=0, padx=10, pady=5, sticky="e")
+
+# Création et positionnement des champs de saisie et boutons
 entry_date_debut = Entry(window, width=largeur_champs)
 entry_date_fin = Entry(window, width=largeur_champs)
 entry_lieu_depart = Entry(window, width=largeur_champs)
 entry_duree_sejour = Entry(window, width=largeur_champs)
 entry_prix_max = Entry(window, width=largeur_champs)
-btn_rechercher = Button(window, text="Rechercher", command=lancer_recherche_vols)
 
-# Insérer les valeurs par défaut APRES la création des Entry
+entry_date_debut.grid(row=1, column=1, padx=10, pady=5, sticky="w")
+entry_date_fin.grid(row=2, column=1, padx=10, pady=5, sticky="w")
+entry_lieu_depart.grid(row=3, column=1, padx=10, pady=5, sticky="w")
+entry_duree_sejour.grid(row=4, column=1, padx=10, pady=5, sticky="w")
+entry_prix_max.grid(row=5, column=1, padx=10, pady=5, sticky="w")
+
+btn_rechercher = Button(window, text="Rechercher", command=lancer_recherche_vols)
+btn_rechercher.grid(row=6, column=1, padx=10, pady=10, sticky="w")
+
+btn_stop = Button(window, text="Stopper", command=reinitialiser_formulaire)
+btn_stop.grid(row=7, column=1, padx=10, pady=5, sticky="w")
+
+# Insérer les valeurs par défaut dans les champs de saisie
+date_demain = datetime.now() + timedelta(days=1)
+date_debut_defaut = (date_demain + timedelta(days=25)).strftime("%d-%m-%Y")
+date_fin_defaut = (date_demain + timedelta(days=55)).strftime("%d-%m-%Y")
+lieu_depart_defaut = "MRS"
+duree_sejour_defaut = "4"
+prix_max_defaut = "50"
+
 entry_date_debut.insert(0, date_debut_defaut)
 entry_date_fin.insert(0, date_fin_defaut)
 entry_lieu_depart.insert(0, lieu_depart_defaut)
 entry_duree_sejour.insert(0, duree_sejour_defaut)
 entry_prix_max.insert(0, prix_max_defaut)
 
-# Positionnement des Entry dans la grille
-entry_date_debut.grid(row=2, column=1, padx=10, pady=5, sticky="w")
-entry_date_fin.grid(row=3, column=1, padx=10, pady=5, sticky="w")
-entry_lieu_depart.grid(row=4, column=1, padx=10, pady=5, sticky="w")
-entry_duree_sejour.grid(row=5, column=1, padx=10, pady=5, sticky="w")
-entry_prix_max.grid(row=6, column=1, padx=10, pady=5, sticky="w")
+# Création et positionnement de la zone de texte pour les résultats
+text_resultats = scrolledtext.ScrolledText(window, height=40, width=60)
+text_resultats.grid(row=0, column=2, rowspan=8, padx=10, pady=10, sticky="ne")
 
-# Création et positionnement du bouton Rechercher
-btn_rechercher = Button(window, text="Rechercher", command=lancer_recherche_vols)
-btn_rechercher.grid(row=7, column=1, padx=10, pady=10, sticky="w") 
-
-# Création et positionnement du bouton Stop juste à droite du bouton Rechercher
-btn_stop = Button(window, text="Stopper", command=reinitialiser_formulaire)
-btn_stop.grid(row=8, column=1, padx=10, pady=5, sticky="w")  
-
-# Remplacement des Entry par des boutons pour ouvrir le calendrier
-btn_date_debut = tk.Button(window, text="📅", command=choisir_date_debut) 
-btn_date_fin = tk.Button(window, text="📅", command=choisir_date_fin)
-
-# Création du Combobox pour la sélection d'aéroports
-combo_aeroports = ttk.Combobox(window, values=[f"{code} {nom}" for code, nom in aeroports], state="readonly")
-combo_aeroports.bind("<<ComboboxSelected>>", choisir_aeroport)
-
-# Remplacez ces lignes
-# btn_date_debut.grid(row=2, column=1, padx=(0, 135), pady=5, sticky="e")  
-# btn_date_fin.grid(row=3, column=1, padx=(0, 135), pady=5, sticky="e")
-
-# Avec ces lignes pour les retirer de la grille
-btn_date_debut.grid_remove()  
-btn_date_fin.grid_remove()  
-combo_aeroports.grid(row=4, column=1, padx=(0, 15), pady=5, sticky="e") 
-
-# Positionnement des widgets
-label_logo.grid(row=0, column=0, padx=10, pady=10, sticky="w")
-label_date_debut.grid(row=2, column=0, padx=2, pady=5, sticky="e")
-label_date_fin.grid(row=3, column=0, padx=2, pady=5, sticky="e")
-label_lieu_depart.grid(row=4, column=0, padx=2, pady=5, sticky="e")
-label_duree_sejour.grid(row=5, column=0, padx=2, pady=5, sticky="e")
-label_prix_max.grid(row=6, column=0, padx=2, pady=5, sticky="e")
-
-# Création et positionnement des Entry et Button
-entry_date_debut = Entry(window, width=largeur_champs)
-entry_date_fin = Entry(window, width=largeur_champs)
-entry_lieu_depart = Entry(window, width=largeur_champs)
-entry_duree_sejour = Entry(window, width=largeur_champs)
-
-# Positionnement des widgets de saisie 
-entry_date_debut.grid(row=2, column=1, padx=10, pady=5, sticky="w")
-entry_date_fin.grid(row=3, column=1, padx=10, pady=5, sticky="w")
-entry_lieu_depart.grid(row=4, column=1, padx=10, pady=5, sticky="w")
-entry_duree_sejour.grid(row=5, column=1, padx=10, pady=5, sticky="w")
-
-# Insérer les valeurs par défaut
-entry_date_debut.insert(0, date_debut_defaut)
-entry_date_fin.insert(0, date_fin_defaut)
-entry_lieu_depart.insert(0, lieu_depart_defaut)
-entry_duree_sejour.insert(0, duree_sejour_defaut)
-
-# Création et positionnement de la zone de texte des résultats
-text_resultats = scrolledtext.ScrolledText(window, height=40, width=50)  
-text_resultats.grid(row=0, column=2, rowspan=8, padx=10, pady=10, sticky="nsew")
-
+# Label de traitement
 label_traitement = Label(window, text="Démarrer le processus !", bg='lightblue')
 label_traitement.grid(row=8, column=1, padx=10, pady=10, sticky="e")
 
-# Test immédiat du clignotement
-clignotement_en_cours = False
-faire_clignoter_label()
-
-# Création et positionnement du label des contacts
+# Label des contacts
 label_contacts = tk.Label(window, text="Création : Sotoca-Online - Version 1.4 - 022024", bg='lightblue')
 label_contacts.grid(row=11, column=0, columnspan=3, pady=10, sticky="nsew")
 
-# Lancement de l'application
+# Ajout des drapeaux
+noms_drapeaux = ['france', 'royaume', 'espagne', 'italie', 'allemagne']
+labels_drapeaux = []
+
+# Crée un Frame pour contenir tous les drapeaux
+frame_drapeaux = tk.Frame(window, bg='lightblue')
+frame_drapeaux.grid(row=8, column=0, columnspan=3, padx=20, pady=2, sticky="w")
+
+# Création des boutons de drapeaux et chargement des images
+for nom_drapeau in noms_drapeaux:
+    chemin_image = chemin_relatif(f"{nom_drapeau}.png")
+    image_drapeau = tk.PhotoImage(file=chemin_image).subsample(2)  # Ajustez la taille si nécessaire
+    action_changement_langue = creer_action_changement_langue(nom_drapeau)
+    label_drapeau = tk.Button(frame_drapeaux, image=image_drapeau, bg='lightblue', command=action_changement_langue)
+    label_drapeau.image = image_drapeau  # Conservez une référence
+    label_drapeau.pack(side="left", padx=5)
+
+# Ajoutez votre code pour la boucle principale de Tkinter ici
 window.mainloop()
