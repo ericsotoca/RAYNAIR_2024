@@ -134,7 +134,7 @@ def effectuer_recherche_vols_selenium(driver, date_debut_str, date_fin_str, lieu
     date_fin = datetime.strptime(date_fin_str, "%d-%m-%Y")
     
     meilleures_offres_par_duree = {}
-    for duree_sejour_str in durees_sejour.split(','):
+    for duree_sejour_str in durees_sejour.split('/'):
         duree_sejour = int(duree_sejour_str.strip())
         date_actuelle = date_debut
 
@@ -443,7 +443,7 @@ label_logo.grid(row=0, column=0, padx=10, pady=10, sticky="w")
 # Configuration des labels pour les champs de saisie
 label_date_debut = Label(window, text="Début de la plage de recherche", bg='lightblue')
 label_date_fin = Label(window, text="Fin de la plage de recherche", bg='lightblue')
-label_lieu_depart = Label(window, text="Aéroport de départ", bg='lightblue')
+label_lieu_depart = Label(window, text="Aéroport de départ (code AITA)", bg='lightblue')
 label_duree_sejour = Label(window, text="Durée du séjour", bg='lightblue')
 label_prix_max = Label(window, text="Prix max en €", bg='lightblue')
 
@@ -484,7 +484,7 @@ date_demain = datetime.now() + timedelta(days=1)
 date_debut_defaut = (date_demain + timedelta(days=45)).strftime("%d-%m-%Y")
 date_fin_defaut = (date_demain + timedelta(days=60)).strftime("%d-%m-%Y")
 lieu_depart_defaut = "MRS"
-duree_sejour_defaut = "4"
+duree_sejour_defaut = "3/4/5"
 prix_max_defaut = "50"
 
 entry_date_debut.insert(0, date_debut_defaut)
