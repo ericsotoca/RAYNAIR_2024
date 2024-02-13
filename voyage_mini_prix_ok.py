@@ -20,6 +20,8 @@ from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
 import logging
 from selenium.common.exceptions import TimeoutException, WebDriverException
+import numpy as np
+
 
 # Configure le journalisation pour écrire dans un fichier avec le niveau de détails DEBUG
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -35,8 +37,35 @@ driver = webdriver.Firefox(service=service, options=options)
 # Configuration de la fenêtre principale de l'application
 window = tk.Tk()
 window.title("Voyage_Mini_Prix")
-window.geometry('1000x750')  # Ajuste la taille de la fenêtre selon tes besoins
+window.geometry('1000x550')  # Ajuste la taille de la fenêtre selon tes besoins
 window.configure(bg='lightblue')
+
+# Variable globale pour contrôler l'état de la recherche
+recherche_active = False
+
+def stopper_et_reinitialiser():
+    global recherche_active
+    # Arrête la recherche
+    recherche_active = False
+    logging.info('Recherche stoppée par l\'utilisateur')
+
+    # Réinitialise les champs du formulaire
+    entry_date_debut.delete(0, tk.END)
+    entry_date_fin.delete(0, tk.END)
+    entry_lieu_depart.delete(0, tk.END)
+    entry_duree_sejour.delete(0, tk.END)
+    entry_prix_max.delete(0, tk.END)
+
+    # Vous pouvez réinsérer les valeurs par défaut si nécessaire
+    entry_date_debut.insert(0, date_debut_defaut)
+    entry_date_fin.insert(0, date_fin_defaut)
+    entry_lieu_depart.insert(0, lieu_depart_defaut)
+    entry_duree_sejour.insert(0, duree_sejour_defaut)
+    entry_prix_max.insert(0, prix_max_defaut)
+
+    # Efface les résultats précédents
+    text_resultats.delete(1.0, tk.END)
+
 
 def chemin_relatif(fichier):
     if getattr(sys, 'frozen', False):
@@ -99,7 +128,7 @@ def afficher_resultats(resultats_par_duree):
 
 def effectuer_recherche_vols_selenium(driver, date_debut_str, date_fin_str, lieu_depart, durees_sejour, prix_max):
     global recherche_active
-    recherche_active = True  # Assurez-vous de définir cette variable globalement si elle est contrôlée de l'extérieur.
+    recherche_active = True
     logging.info('Recherche active: {}'.format(recherche_active))
     date_debut = datetime.strptime(date_debut_str, "%d-%m-%Y")
     date_fin = datetime.strptime(date_fin_str, "%d-%m-%Y")
@@ -117,9 +146,10 @@ def effectuer_recherche_vols_selenium(driver, date_debut_str, date_fin_str, lieu
             date_de_fin_sejour = date_actuelle + timedelta(days=duree_sejour)
             if date_de_fin_sejour > date_fin:  # Assure que la date de fin de séjour ne dépasse pas la plage autorisée.
                 break
-            
+
             date_out = date_actuelle.strftime("%Y-%m-%d")
             date_in = date_de_fin_sejour.strftime("%Y-%m-%d")
+            meilleures_offres = {}  # Initialisation correcte de meilleures_offres
 
             url = f"https://www.ryanair.com/fr/fr/cheap-flights-beta?originIata={lieu_depart}&destinationIata=ANY&isReturn=true&isMacDestination=false&promoCode=&adults=1&teens=0&children=0&infants=0&dateOut={date_out}&dateIn={date_in}&daysTrip={duree_sejour}&dayOfWeek=TUESDAY&isExactDate=true&outboundFromHour=00:00&outboundToHour=23:59&inboundFromHour=00:00&inboundToHour=23:59&priceValueTo={prix_max}&currency=EUR&isFlexibleDay=false"
             driver.get(url)
@@ -194,8 +224,36 @@ def lancer_recherche_vols():
         recherche_active = False  # Désactiver la recherche une fois terminée
 
 def reinitialiser_formulaire():
-    # Implémentez la logique pour réinitialiser le formulaire
-    pass
+    global recherche_active
+    # Arrête la recherche en cours en mettant à jour la variable globale
+    recherche_active = False
+    
+    # Réinitialise les champs de saisie aux valeurs par défaut
+    entry_date_debut.delete(0, tk.END)
+    entry_date_debut.insert(0, date_debut_defaut)
+    
+    entry_date_fin.delete(0, tk.END)
+    entry_date_fin.insert(0, date_fin_defaut)
+    
+    entry_lieu_depart.delete(0, tk.END)
+    entry_lieu_depart.insert(0, lieu_depart_defaut)
+    
+    entry_duree_sejour.delete(0, tk.END)
+    entry_duree_sejour.insert(0, duree_sejour_defaut)
+    
+    entry_prix_max.delete(0, tk.END)
+    entry_prix_max.insert(0, prix_max_defaut)
+    
+    # Efface le contenu de la zone de texte des résultats
+    text_resultats.delete(1.0, tk.END)
+    
+    # Affiche un message ou réinitialise l'état d'autres éléments de l'UI si nécessaire
+    label_traitement.config(text="Démarrer le processus !")
+    btn_rechercher.config(state='normal')  # Réactive le bouton de recherche si désactivé
+    
+    # Optionnel : Affiche une notification indiquant que le formulaire a été réinitialisé
+    messagebox.showinfo("Réinitialisation", "Le formulaire a été réinitialisé.")
+
 
 def creer_action_changement_langue(nom_drapeau):
     def action():
@@ -302,14 +360,18 @@ traductions = {
     },
 }
 
-
 # Fonction pour changer la langue
 def changer_langue(langue):
     # Met à jour le titre de la fenêtre
     window.title(traductions[langue]['titre'])
     # Met à jour les textes des boutons et labels
     btn_rechercher.config(text=traductions[langue]['rechercher'])
+    
     btn_stop.config(text=traductions[langue]['stopper'])
+    btn_stop.config(command=stopper_et_reinitialiser)
+    
+    
+    
     label_date_debut.config(text=traductions[langue]['debut_recherche'])
     label_date_fin.config(text=traductions[langue]['fin_recherche'])
     label_lieu_depart.config(text=traductions[langue]['aeroport_depart'])
@@ -344,6 +406,34 @@ label_instructions = tk.Label(
 )
 label_instructions.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
 
+# Fonction pour mettre à jour le champ de saisie du lieu de départ
+def choisir_aeroport(event):
+    code_iata = combo_aeroports.get().split(" ")[0]  # Récupère le code IATA de la sélection
+    entry_lieu_depart.delete(0, tk.END)
+    entry_lieu_depart.insert(0, code_iata)
+
+# Liste des aéroports (code IATA et nom complet)
+aeroports= [
+  ("AJA", "Campo dell'Oro Airport"),
+  ("BIA", "Poretta Airport"),
+  ("BOD", "Mérignac Airport"),
+  ("BVA", "Beauvais-Tillé Airport"),
+  ("CDG", "Charles de Gaulle Airport"),
+  ("FSC", "Figari Sud-Corse Airport"),
+  ("LGB", "Grand Columbier Airport"),
+  ("LIG", "Bellegarde Airport"),
+  ("LRY", "La Rochelle Airport"),
+  ("LYS", "Saint-Exupéry Airport"),
+  ("MRS", "Provence Airport"),
+  ("NTE", "Nantes Atlantique Airport"),
+  ("ORY", "Orly Airport"),
+  ("PIS", "Biard Airport"),
+  ("PUF", "Pau-Pyrénées Airport"),
+  ("TLN", "Hyères Le Palyvestre Airport"),
+  ("TLS", "Blagnac Airport"),
+  ("VRN", "Verona Airport")   
+]
+
 # Création et placement du logo
 chemin_logo = chemin_relatif('logo.png')
 logo_image = tk.PhotoImage(file=chemin_logo)
@@ -365,11 +455,15 @@ label_duree_sejour.grid(row=4, column=0, padx=10, pady=5, sticky="e")
 label_prix_max.grid(row=5, column=0, padx=10, pady=5, sticky="e")
 
 # Création et positionnement des champs de saisie et boutons
-entry_date_debut = Entry(window, width=largeur_champs)
-entry_date_fin = Entry(window, width=largeur_champs)
-entry_lieu_depart = Entry(window, width=largeur_champs)
-entry_duree_sejour = Entry(window, width=largeur_champs)
-entry_prix_max = Entry(window, width=largeur_champs)
+
+combo_aeroports = ttk.Combobox(window, values=[f"{code} {nom}" for code, nom in aeroports], state="readonly")
+combo_aeroports.bind("<<ComboboxSelected>>", choisir_aeroport)
+
+entry_date_debut = Entry(window, width=12)
+entry_date_fin = Entry(window, width=12)
+entry_lieu_depart = Entry(window, width=12)
+entry_duree_sejour = Entry(window, width=12)
+entry_prix_max = Entry(window, width=12)
 
 entry_date_debut.grid(row=1, column=1, padx=10, pady=5, sticky="w")
 entry_date_fin.grid(row=2, column=1, padx=10, pady=5, sticky="w")
@@ -377,16 +471,18 @@ entry_lieu_depart.grid(row=3, column=1, padx=10, pady=5, sticky="w")
 entry_duree_sejour.grid(row=4, column=1, padx=10, pady=5, sticky="w")
 entry_prix_max.grid(row=5, column=1, padx=10, pady=5, sticky="w")
 
-btn_rechercher = Button(window, text="Rechercher", command=lancer_recherche_vols)
+btn_rechercher = Button(window, text="Rechercher", command=lancer_recherche_vols, width=9)
 btn_rechercher.grid(row=6, column=1, padx=10, pady=10, sticky="w")
 
-btn_stop = Button(window, text="Stopper", command=reinitialiser_formulaire)
+btn_stop = Button(window, text="Réinitialiser", command=reinitialiser_formulaire, width=9)
 btn_stop.grid(row=7, column=1, padx=10, pady=5, sticky="w")
 
-# Insérer les valeurs par défaut dans les champs de saisie
+combo_aeroports.grid(row=3, column=1, padx=(0, 15), pady=5, sticky="e") 
+
+# Insérer les valeurs par défaut dans les champs de saisie - réglage
 date_demain = datetime.now() + timedelta(days=1)
-date_debut_defaut = (date_demain + timedelta(days=25)).strftime("%d-%m-%Y")
-date_fin_defaut = (date_demain + timedelta(days=55)).strftime("%d-%m-%Y")
+date_debut_defaut = (date_demain + timedelta(days=45)).strftime("%d-%m-%Y")
+date_fin_defaut = (date_demain + timedelta(days=60)).strftime("%d-%m-%Y")
 lieu_depart_defaut = "MRS"
 duree_sejour_defaut = "4"
 prix_max_defaut = "50"
@@ -398,16 +494,16 @@ entry_duree_sejour.insert(0, duree_sejour_defaut)
 entry_prix_max.insert(0, prix_max_defaut)
 
 # Création et positionnement de la zone de texte pour les résultats
-text_resultats = scrolledtext.ScrolledText(window, height=40, width=60)
+text_resultats = scrolledtext.ScrolledText(window, height=30, width=60)
 text_resultats.grid(row=0, column=2, rowspan=8, padx=10, pady=10, sticky="ne")
 
 # Label de traitement
 label_traitement = Label(window, text="Démarrer le processus !", bg='lightblue')
-label_traitement.grid(row=8, column=1, padx=10, pady=10, sticky="e")
+label_traitement.grid(row=6, column=1, padx=10, pady=10, sticky="e")
 
 # Label des contacts
 label_contacts = tk.Label(window, text="Création : Sotoca-Online - Version 1.4 - 022024", bg='lightblue')
-label_contacts.grid(row=11, column=0, columnspan=3, pady=10, sticky="nsew")
+label_contacts.grid(row=8, column=0, columnspan=3, pady=10, sticky="nsew")
 
 # Ajout des drapeaux
 noms_drapeaux = ['france', 'royaume', 'espagne', 'italie', 'allemagne']
@@ -415,7 +511,8 @@ labels_drapeaux = []
 
 # Crée un Frame pour contenir tous les drapeaux
 frame_drapeaux = tk.Frame(window, bg='lightblue')
-frame_drapeaux.grid(row=8, column=0, columnspan=3, padx=20, pady=2, sticky="w")
+# frame_drapeaux.grid(row=8, column=0, columnspan=3, padx=20, pady=2, sticky="w")
+frame_drapeaux.grid(row=7, column=0, columnspan=3, padx=20, pady=2, sticky="w")
 
 # Création des boutons de drapeaux et chargement des images
 for nom_drapeau in noms_drapeaux:
