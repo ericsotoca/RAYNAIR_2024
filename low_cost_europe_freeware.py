@@ -1,13 +1,11 @@
-from tkinter import messagebox
+# Importation optimisée des modules
+from tkinter import messagebox, scrolledtext, Label, Entry, Button, font, ttk, Tk, PhotoImage, Frame
 import tkinter as tk
-from tkinter import scrolledtext, Label, Entry, Button, messagebox
-from tkinter import font
 from tkcalendar import Calendar
 import threading
 import re
 import sys
 import os
-from tkinter import ttk
 import winsound
 import webbrowser
 from selenium import webdriver
@@ -331,7 +329,7 @@ traductions = {
         'stopper': "Resettare",
         'debut_recherche': "Inizio dell'intervallo di ricerca",
         'fin_recherche': "Fine dell'intervallo di ricerca",
-        'aeroport_depart': "Aeroporto di partenza (codice IATA)",
+        'aeroport_depart': "Aeroporto di partenza (IATA)",
         'duree_sejour': "Durata del soggiorno",
         'prix_max': "Prezzo massimo in €",
         'demarrer_processus': "Avvia il processo!",
@@ -348,7 +346,7 @@ traductions = {
         'stopper': "Restablecer",
         'debut_recherche': "Inicio del periodo de búsqueda",
         'fin_recherche': "Fin del periodo de búsqueda",
-        'aeroport_depart': "Aeropuerto de salida (código IATA)",
+        'aeroport_depart': "Aeropuerto de salida (IATA)",
         'duree_sejour': "Duración de la estancia",
         'prix_max': "Precio máximo en €",
         'demarrer_processus': "¡Iniciar el proceso!",
@@ -423,7 +421,7 @@ def choisir_aeroport(event):
     entry_lieu_depart.insert(0, code_iata)
 
 # Liste des aéroports (code IATA et nom complet)
-aeroports= [
+aeroports = [
   ("AJA", "Campo dell'Oro Airport"),
   ("BIA", "Poretta Airport"),
   ("BOD", "Mérignac Airport"),
@@ -441,7 +439,14 @@ aeroports= [
   ("PUF", "Pau-Pyrénées Airport"),
   ("TLN", "Hyères Le Palyvestre Airport"),
   ("TLS", "Blagnac Airport"),
-  ("VRN", "Verona Airport")   
+  ("VRN", "Verona Airport"),
+  ("MPL", "Montpellier Méditerranée Airport"),
+  ("BIQ", "Biarritz Airport"),
+  ("RNS", "Rennes Bretagne Airport"),
+  ("CFR", "Carpiquet Airport"),
+  ("LIL", "Lille Airport"),
+  ("SXB", "Strasbourg Airport"),
+  ("NCE", "Nice - Côte d'Azur Airport")
 ]
 
 # Création et placement du logo
